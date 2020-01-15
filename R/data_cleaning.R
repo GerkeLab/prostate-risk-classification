@@ -1,19 +1,20 @@
-.libPaths(c("~/Documents/Rpackagesv2",.libPaths()))
+library(fs)
 library(SEERreadr)
 library(tidyverse)
 
 # importing SEER data ---------------------------------------------------------
 
-col_pos <- seer_read_col_positions("/Volumes/Lab_Gerke/SEER/Nov2018/SEER_1975_2016_TEXTDATA/incidence/read.seer.research.nov2018.sas")
-tx <-"/Volumes/Lab_Gerke/SEER/Nov2018/SEER_1975_2016_TEXTDATA/incidence/"
+tx <- fs::path("","Volumes","Lab_Gerke","SEER", "Nov2018", "SEER_1975_2016_TEXTDATA", "incidence")
 
-b <- seer_read_fwf(paste0(tx,"yr1975_2016.seer9/MALEGEN.TXT"),
+col_pos <- seer_read_col_positions(paste0(tx, "/read.seer.research.nov2018.sas"))
+
+b <- seer_read_fwf(paste0(tx,"/yr1975_2016.seer9/MALEGEN.TXT"),
                    col_positions = col_pos)
-c <- seer_read_fwf(paste0(tx,"yr1992_2016.sj_lx_rg_ak/MALEGEN.TXT"),
+c <- seer_read_fwf(paste0(tx,"/yr1992_2016.sj_lx_rg_ak/MALEGEN.TXT"),
                    col_positions = col_pos)
-d <- seer_read_fwf(paste0(tx,"yr2000_2016.gc_ky_la_nj_gg/MALEGEN.TXT"),
+d <- seer_read_fwf(paste0(tx,"/yr2000_2016.gc_ky_la_nj_gg/MALEGEN.TXT"),
                    col_positions = col_pos)
-e <- seer_read_fwf(paste0(tx,"yr2005.la_2nd_half/MALEGEN.TXT"),
+e <- seer_read_fwf(paste0(tx,"/yr2005.la_2nd_half/MALEGEN.TXT"),
                    col_positions = col_pos)
 
 seer <- b %>%
@@ -25,7 +26,8 @@ rm(tx,col_pos, b, c, d, e)
 
 # importing NCDB data ---------------------------------------------------------
 
-load("/Volumes/NCDB_PUF/Travis/data/raw.Rdata")
+ncdb_path <- path("", "Volumes", "Lab_Gerke", "prostateWorkGroup", "riskClassification", "data")
+load(paste0(ncdb_path,"/raw.Rdata"))
 
 ncdb <- dat
 
