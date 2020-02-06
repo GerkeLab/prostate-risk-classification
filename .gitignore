@@ -3,3 +3,4 @@
 .Rproj.user
 _library/*
 data*
+.DS_Store
