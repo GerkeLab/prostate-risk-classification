@@ -4,25 +4,22 @@ library(tidyverse)
 
 # importing SEER data ---------------------------------------------------------
 
-tx <- fs::path("","Volumes","Lab_Gerke","SEER", "Nov2018", "SEER_1975_2016_TEXTDATA", "incidence")
+seer_path <- fs::path("","Volumes","Lab_Gerke","SEER", "Nov2018", "SEER_1975_2016_TEXTDATA", "incidence")
 
-col_pos <- seer_read_col_positions(paste0(tx, "/read.seer.research.nov2018.sas"))
-col_pos
-b <- seer_read_fwf(paste0(tx,"/yr1975_2016.seer9/MALEGEN.TXT"),
-                   col_positions = col_pos)
-c <- seer_read_fwf(paste0(tx,"/yr1992_2016.sj_lx_rg_ak/MALEGEN.TXT"),
-                   col_positions = col_pos)
-d <- seer_read_fwf(paste0(tx,"/yr2000_2016.gc_ky_la_nj_gg/MALEGEN.TXT"),
-                   col_positions = col_pos)
-e <- seer_read_fwf(paste0(tx,"/yr2005.la_2nd_half/MALEGEN.TXT"),
-                   col_positions = col_pos)
+col_pos <- seer_read_col_positions(fs::path(seer_path, "read.seer.research.nov2018.sas"))
 
-seer <- b %>%
-  bind_rows(c) %>%
-  bind_rows(d) %>%
-  bind_rows(e) 
-
-rm(tx,col_pos, b, c, d, e)
+# beyond the primary seer9 "male genital cancer" file, there are 3 additional
+# files which are needed to capture staggered SEER entry for certain regions
+seer <- bind_rows(
+  seer_read_fwf(fs::path(seer_path,"yr1975_2016.seer9", "MALEGEN.TXT"),
+                col_positions = col_pos),
+  seer_read_fwf(fs::path(seer_path,"yr1992_2016.sj_lx_rg_ak", "MALEGEN.TXT"),
+                col_positions = col_pos),
+  seer_read_fwf(fs::path(seer_path,"yr2000_2016.gc_ky_la_nj_gg", "MALEGEN.TXT"),
+                col_positions = col_pos),
+  seer_read_fwf(fs::path(seer_path,"yr2005.la_2nd_half", "MALEGEN.TXT"),
+                col_positions = col_pos)
+)
 
 # importing NCDB data ---------------------------------------------------------
 
