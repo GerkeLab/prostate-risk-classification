@@ -7,7 +7,7 @@ library(tidyverse)
 tx <- fs::path("","Volumes","Lab_Gerke","SEER", "Nov2018", "SEER_1975_2016_TEXTDATA", "incidence")
 
 col_pos <- seer_read_col_positions(paste0(tx, "/read.seer.research.nov2018.sas"))
-
+col_pos
 b <- seer_read_fwf(paste0(tx,"/yr1975_2016.seer9/MALEGEN.TXT"),
                    col_positions = col_pos)
 c <- seer_read_fwf(paste0(tx,"/yr1992_2016.sj_lx_rg_ak/MALEGEN.TXT"),
@@ -83,7 +83,7 @@ seer <- seer %>%
       gleason %in% c("<=6", "7") | PSA <=20 ~ "Intermediate",
     TRUE ~ NA_character_
   )) %>%
-  mutate(eau = damico) %>%
+  mutate(eau = damico) %>% ################################################## Is not equal for PSA =10
 
 
 ncdb <- ncdb %>%
