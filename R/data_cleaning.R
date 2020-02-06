@@ -24,7 +24,7 @@ seer <- bind_rows(
 # importing NCDB data ---------------------------------------------------------
 
 ncdb_path <- path("", "Volumes", "Lab_Gerke", "prostateWorkGroup", "riskClassification", "data")
-load(paste0(ncdb_path,"/raw.Rdata"))
+load(fs::path(ncdb_path,"raw.Rdata"))
 
 ncdb <- dat
 
@@ -80,7 +80,7 @@ seer <- seer %>%
       gleason %in% c("<=6", "7") | PSA <=20 ~ "Intermediate",
     TRUE ~ NA_character_
   )) %>%
-  mutate(eau = damico) %>% ################################################## Is not equal for PSA =10
+  mutate(eau = damico) ################################################## Is not equal for PSA =10
 
 
 ncdb <- ncdb %>%
