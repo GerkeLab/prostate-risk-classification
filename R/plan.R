@@ -5,8 +5,21 @@ plan <- drake_plan(
                                   "Nov2018", "SEER_1975_2016_TEXTDATA",
                                   "incidence")),
   
-  ncdb_raw = ncdb_import(fs::path("","Volumes","data","DATASET"))
+  ncdb_raw = ncdb_import(fs::path("","Volumes","data","DATASET")),
   
   # cleaning the data files and creating risk classifications -------
+  seer = seer_recoding(seer_raw),
+  ncdb = ncdb_recoding(ncdb_raw), 
   
+  # creating dataset for machine learning proxy ---------------------
+  seer_ml = make_structured_noise(data = seer,
+                                  identifier = , 
+                                  outcome = , 
+                                  outcome_time = ,
+                                  numeric_vars = c("psa","isup","percent_pos_cores")),
+  ncdb_ml = make_structured_noise(ncdb,
+                                  identifier = , 
+                                  outcome = , 
+                                  outcome_time = ,
+                                  numeric_vars = c("psa","isup","percent_pos_cores"))
 )
