@@ -13,14 +13,14 @@ plan <- drake_plan(
   ncdb = ncdb_recoding(ncdb_raw)#, 
   
   # creating dataset for machine learning proxy ---------------------
-#   seer_ml = make_structured_noise(data = seer,
-#                                   identifier = , 
-#                                   outcome = , 
-#                                   outcome_time = ,
-#                                   numeric_vars = c("psa","isup","percent_pos_cores")),
-#   ncdb_ml = make_structured_noise(ncdb,
-#                                   identifier = , 
-#                                   outcome = , 
-#                                   outcome_time = ,
-#                                   numeric_vars = c("psa","isup","percent_pos_cores"))
+  # seer_ml = make_structured_noise(data = seer,
+  #                                 identifier = , 
+  #                                 outcome = , 
+  #                                 outcome_time = ,
+  #                                 numeric_vars = c("psa","isup","percent_pos_cores")),
+  # ncdb_ml = make_structured_noise(ncdb,
+  #                                 identifier = , 
+  #                                 outcome = , 
+  #                                 outcome_time = ,
+  #                                 numeric_vars = c("psa","isup","percent_pos_cores"))
 )
