@@ -73,11 +73,10 @@ seer_recoding <- function(seer_raw){
       GRADE == "9"    ~ NA_real_,#----------------Check good
       TRUE ~ as.numeric(GRADE)
     )) %>%
-    mutate_at(c("CS12SITE", "CS13SITE"), 
-              ~ case_when(
-                . %in% c("991", "988", "998", "999") ~ NA_real_,#----------------Doesn't work
-                TRUE ~ as.numeric(.)
-              )) %>% 
+    mutate_at(mutate_at(vars("CS12SITE", "CS13SITE"), funs(case_when(
+      . > 101 ~ NA_real_, 
+      TRUE ~ as.numeric(.)
+    )))) %>% 
     mutate(percent_pos_cores = (CS12SITE / CS13SITE) * 100) %>%
     # create capra specific groups to add together - starting each 
     # variable name with "capra_" so they can be easily filtered
