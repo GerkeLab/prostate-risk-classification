@@ -32,31 +32,30 @@ seer_recoding <- function(seer_raw){
       # one step and the actual classification in another? Or does it not
       # even matter? 
   
-  seer <- seer_raw %>% 
-    # create variables for calulating risk scores -------------------
-    mutate_at(("CS1SITE"), 
+  seer <- seer_raw %>% # create variables for calulating risk scores -------------------
+  mutate_at(("CS1SITE"), 
             ~ case_when(
-              . %in% c("000","988", "989","990", "997", "998", "999") ~ NA_real_, #------Check good
+              . %in% c("000","988", "989","990", "997", "998", "999") ~ NA_real_,
               TRUE ~ as.numeric(.)
-            )) %>% 
+            )) %>%
     mutate(psa = as.numeric(CS1SITE)/10) %>%
     mutate(gleason = case_when(
-      as.numeric(CS8SITE) > 10                          ~ NA_character_,#----------------Check good
+      as.numeric(CS8SITE) > 10                          ~ NA_character_,
       CS8SITE %in% c("002", "003", "004", "005", "006") ~ "<=6",
       CS8SITE == "007"                                  ~ "7",
       CS8SITE == "008"                                  ~ "8",
       CS8SITE %in% c("009", "010")                      ~ "9-10"
     )) %>%
     mutate(tstage = case_when(
-      # need to double check what to do with TX NOS
-      #   DAJCCT: 19, 29, 39, 00, 01, 05
-      DAJCCT %in% c("99", "00", "01", "05", "88") ~ NA_character_,#--------------Need update (almost ready)
-      DAJCCT %in% c("10", "19") ~ "T1",
-      (DAJCCT >= "12" & DAJCCT < "15") ~ "T1a",
-      (DAJCCT >= "15" & DAJCCT < "18") ~ "T1b",
+      # remove TX and T0
+      # added the NOS to their coreesponding stage
+      DAJCCT %in% c("99", "00", "01", "05", "06", "07", "88") ~ NA_character_,
+      DAJCCT %in% c("10", "11", "19") ~ "T1",
+      (DAJCCT >= "12" & DAJCCT < "15" | DAJCCT == "80") ~ "T1a",
+      (DAJCCT >= "15" & DAJCCT < "18" | DAJCCT == "81") ~ "T1b",
       DAJCCT == "18" ~ "T1c",
       DAJCCT %in% c("20", "29") ~ "T2",
-      (DAJCCT >= "21" & DAJCCT < "22") ~ "T2a",
+      DAJCCT == "21"  ~ "T2a",
       DAJCCT == "22" ~ "T2b",
       DAJCCT == "23" ~ "T2c",
       DAJCCT %in% c("30", "39") ~ "T3",
@@ -70,19 +69,20 @@ seer_recoding <- function(seer_raw){
       DAJCCT == "44" ~ "T4d"
     )) %>%
     mutate(isup = case_when(
-      GRADE == "9"    ~ NA_real_,#----------------Check good
+      GRADE == "9"    ~ NA_real_,
       TRUE ~ as.numeric(GRADE)
     )) %>%
-    mutate_at(mutate_at(vars("CS12SITE", "CS13SITE"), funs(case_when(
-      . > 101 ~ NA_real_, 
-      TRUE ~ as.numeric(.)
-    )))) %>% 
+    mutate_at(c("CS12SITE", "CS13SITE"),
+              ~ case_when(
+                . > 101 ~ NA_real_,
+                TRUE ~ as.numeric(.)
+              )) %>% 
     mutate(percent_pos_cores = (CS12SITE / CS13SITE) * 100) %>%
     # create capra specific groups to add together - starting each 
     # variable name with "capra_" so they can be easily filtered
     # out later if need be and cleaning up spacing so easier to read 
     mutate(capra_psa = case_when(
-      psa <= 6               ~ 0,#----------------Check good
+      psa <= 6               ~ 0,
       (psa > 6 & psa <= 10)  ~ 1,
       (psa > 10 & psa <= 20) ~ 2,
       (psa > 20 & psa <= 30) ~ 3,
@@ -90,6 +90,7 @@ seer_recoding <- function(seer_raw){
       TRUE ~ NA_real_
     )) %>%
     mutate(capra_gleasan = case_when( #-------------------------------------------is actually now working
+      CS9SITE %in% c("019", "029", "039", "049", "059", "099", "988", "998", "999") ~ NA_real_,
       CS9SITE %in% c("011", "012", "013", "021", "022", "023",
                      "031", "032" , "033")                  ~ 0,
       CS9SITE %in% c("014", "015", "024", "025", "034", "035") ~ 1,
@@ -104,7 +105,7 @@ seer_recoding <- function(seer_raw){
     )) %>%
     mutate(capra_per_pos = case_when(
       as.numeric(percent_pos_cores) < 34  ~ 0,
-      as.numeric(percent_pos_cores) >= 34 ~ 1,#----------------Will have too much one beacuse 991 etc are not removed in CS12 and 13
+      as.numeric(percent_pos_cores) >= 34 ~ 1,
       TRUE                   ~ NA_real_ 
     )) %>%
     mutate(capra_age = case_when(
@@ -115,7 +116,7 @@ seer_recoding <- function(seer_raw){
     # not sure if the below is the correct method - currently we dont have any cases 
     # with all the info complete to calculate capra so I calculate as much as we can ... 
     # other option with the other paper did was to impute all missing and then calculate
-    mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = TRUE)) %>%
+    mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE)) %>% #-----------changed to false now that I have more data
     # create risk classifications -----------------------------------
     mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
       tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
