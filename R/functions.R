@@ -98,17 +98,17 @@ seer_recoding <- function(seer_raw){
                      "052", "053", "054", "055")             ~ 3,
       TRUE                                               ~ NA_real_
     )) %>%
-    mutate(capra_tstage = case_when(
+    mutate(capra_tstage = case_when(#----------------Check good
       tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a")              ~ 0,
       tstage %in% c("T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c") ~ 1,
       TRUE                                                         ~ NA_real_
     )) %>%
-    mutate(capra_per_pos = case_when(
+    mutate(capra_per_pos = case_when(#----------------Check good
       as.numeric(percent_pos_cores) < 34  ~ 0,
       as.numeric(percent_pos_cores) >= 34 ~ 1,
       TRUE                   ~ NA_real_ 
     )) %>%
-    mutate(capra_age = case_when(
+    mutate(capra_age = case_when(#----------------Check good
       as.numeric(AGE_DX) < 50                             ~  0,
       as.numeric(AGE_DX) >= 50 & as.numeric(AGE_DX) < 131 ~ 1,
       TRUE                                                ~ NA_real_
