@@ -178,12 +178,17 @@ ncdb_recoding <- function(ncdb_raw){
       # would it be clearer to do so do all the recoding and cleanining in 
       # one step and the actual classification in another? Or does it not
       # even matter? 
+  # http://ncdbpuf.facs.org/node/274
   
   ncdb <- ncdb_raw %>% 
-    # create variables for calulating risk scores -------------------
+    mutate_at(("CS_SITESPECIFIC_FACTOR_1"), # create variables for calulating risk scores -------------------
+            ~ case_when(
+              . %in% c("000","988", "989","990", "997", "998", "999") ~ NA_real_,
+              TRUE ~ as.numeric(.)
+            )) %>%
     mutate(psa = CS_SITESPECIFIC_FACTOR_1/10) %>% 
     mutate(gleason = case_when(
-      CS_SITESPECIFIC_FACTOR_8 %in% c(988:999) ~ NA_character_,
+      CS_SITESPECIFIC_FACTOR_8 > 10            ~ NA_character_,
       CS_SITESPECIFIC_FACTOR_8 %in% c(2:6)     ~ "<=6",
       CS_SITESPECIFIC_FACTOR_8 == 7            ~ "7",
       CS_SITESPECIFIC_FACTOR_8 == 8            ~ "8",
@@ -191,7 +196,7 @@ ncdb_recoding <- function(ncdb_raw){
     )) %>%
     mutate(tstage = case_when(
       # need to double check what to do with : 0, 0A, 0IS
-      TNM_CLIN_T %in% c("", "88", "c0", "cX", "pA", "pIS") ~ NA_character_,
+      TNM_CLIN_T %in% c("88", "c0", "cX", "pA", "pIS") ~ NA_character_,
       TNM_CLIN_T == "c1"  ~ "T1",
       TNM_CLIN_T == "c1A" ~ "T1a",
       TNM_CLIN_T == "c1B" ~ "T1b",
@@ -212,7 +217,7 @@ ncdb_recoding <- function(ncdb_raw){
     )) %>%
     mutate_at(c("CS_SITESPECIFIC_FACTOR_12", "CS_SITESPECIFIC_FACTOR_13"), 
               ~ case_when(
-                . %in% c(991:999) ~ NA_real_,
+                . > 101 ~ NA_real_, 
                 TRUE ~ .
               )) %>% 
     mutate(percent_pos_cores = (CS_SITESPECIFIC_FACTOR_12 / CS_SITESPECIFIC_FACTOR_13) * 100) %>%
@@ -228,13 +233,14 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE ~ NA_real_
     )) %>%
     mutate(capra_gleasan = case_when(
+      CS_SITESPECIFIC_FACTOR_9 %in% c(19, 29, 39, 49, 59, 99, 988, 998, 999) ~ NA_real_,
       CS_SITESPECIFIC_FACTOR_9 %in% c(11:13, 21:23, 31:33) ~ 0,
       CS_SITESPECIFIC_FACTOR_9 %in% c(14:15, 24:25, 34:35) ~ 1,
       CS_SITESPECIFIC_FACTOR_9 %in% c(41:45, 51:55)        ~ 3,
       TRUE                                                 ~ NA_real_
     )) %>%
     mutate(capra_tstage = case_when(
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b")           ~ 0,
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")    ~ 0, 
       tstage %in% c("T3", "T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c")     ~ 1,
       TRUE                                                         ~ NA_real_
     )) %>%
@@ -244,11 +250,17 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE                    ~ NA_real_ 
     )) %>%
     mutate(capra_age = case_when(
-      AGE < 50              ~  0,
+      AGE < 50              ~  0, 
       AGE >= 50 & AGE < 131 ~ 1,
       TRUE                  ~ NA_real_
     )) %>%
-    mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm=TRUE)) %>%
+    mutate(capra_point = rowSums(select(.,capra_psa:capra_age), na.rm=FALSE)) %>%
+    mutate(capra_score = case_when(
+      (capra_point >= 0 & capra_point <= 2) ~ "Low",
+      (capra_point >= 3 & capra_point <= 5) ~ "Intermediate",
+      (capra_point >= 6 & capra_point <= 10) ~ "High",
+      TRUE ~ NA_character_
+    )) %>% 
     # create risk classifications -----------------------------------
     mutate(damico = case_when( 
       tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
@@ -262,21 +274,21 @@ ncdb_recoding <- function(ncdb_raw){
         gleason == "<=6"            ~ "Low",
       TRUE                          ~ NA_character_
     )) %>% 
-    mutate(nice = case_when( # need to figure out T2
+    mutate(nice = case_when( 
       tstage %in% c("T2c", "T3", "T3a", "T3b", "T3c","T4", "T4a", "T4b") | 
         psa > 20 |
         gleason %in% c("8", "9-10") ~ "High",
       tstage == "T2b" |
         gleason == "7" |
         between(psa, 10, 20)        ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a") & 
         psa < 10 & 
         gleason == "<=6"            ~ "Low",
       TRUE ~ NA_character_
     )) %>% 
     mutate(eau = nice) %>% 
     # create numeric versions of categories -------------------------
-    mutate_at(c("damico", "nice"),
+    mutate_at(c("damico", "nice", "capra_score"),
               .funs = list(num = ~ case_when(
                 . == "Low" ~ 1,
                 . == "Intermediate" ~ 2,
