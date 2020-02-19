@@ -116,7 +116,13 @@ seer_recoding <- function(seer_raw){
     # not sure if the below is the correct method - currently we dont have any cases 
     # with all the info complete to calculate capra so I calculate as much as we can ... 
     # other option with the other paper did was to impute all missing and then calculate
-    mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE)) %>% #-----------changed to false now that I have more data
+    mutate(capra_point = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE)) %>%#-----------changed to false now that I have more data
+    mutate(capra_score = case_when(
+      (capra_point >= 0 & capra_point <= 2) ~ "Low",
+      (capra_point >= 3 & capra_point <= 5) ~ "Intermediate",
+      (capra_point >= 6 & capra_point <= 10) ~ "High",
+      TRUE ~ NA_character_
+    )) %>% 
     # create risk classifications -----------------------------------
     # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
     # https://staging.seer.cancer.gov/tnm/input/1.9/prostate/clin_t/?breadcrumbs=(~schema_list~),(~view_schema~,~prostate~)
@@ -146,7 +152,7 @@ seer_recoding <- function(seer_raw){
     )) %>% 
     mutate(eau = nice) %>%
     # create numeric versions of categories -------------------------
-    mutate_at(c("damico", "nice"),
+    mutate_at(c("damico", "nice", "capra_score"),
               .funs = list(num = ~ case_when(
                 . == "Low" ~ 1,
                 . == "Intermediate" ~ 2,
@@ -228,8 +234,8 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE                                                 ~ NA_real_
     )) %>%
     mutate(capra_tstage = case_when(
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a")              ~ 0,
-      tstage %in% c("T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c") ~ 1,
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b")           ~ 0,
+      tstage %in% c("T3", "T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c")     ~ 1,
       TRUE                                                         ~ NA_real_
     )) %>%
     mutate(capra_per_pos = case_when(
@@ -244,8 +250,6 @@ ncdb_recoding <- function(ncdb_raw){
     )) %>%
     mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm=TRUE)) %>%
     # create risk classifications -----------------------------------
-  # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
-  # https://staging.seer.cancer.gov/tnm/input/1.9/prostate/clin_t/?breadcrumbs=(~schema_list~),(~view_schema~,~prostate~)
     mutate(damico = case_when( 
       tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
         psa > 20 | 
@@ -259,7 +263,7 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE                          ~ NA_character_
     )) %>% 
     mutate(nice = case_when( # need to figure out T2
-      tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T2c") | 
+      tstage %in% c("T2c", "T3", "T3a", "T3b", "T3c","T4", "T4a", "T4b") | 
         psa > 20 |
         gleason %in% c("8", "9-10") ~ "High",
       tstage == "T2b" |
