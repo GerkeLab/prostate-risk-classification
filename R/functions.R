@@ -118,14 +118,16 @@ seer_recoding <- function(seer_raw){
     # other option with the other paper did was to impute all missing and then calculate
     mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE)) %>% #-----------changed to false now that I have more data
     # create risk classifications -----------------------------------
-    mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
+    # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
+    # https://staging.seer.cancer.gov/tnm/input/1.9/prostate/clin_t/?breadcrumbs=(~schema_list~),(~view_schema~,~prostate~)
+    mutate(damico = case_when(
       tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
         psa > 20 | 
         gleason %in% c("8", "9-10")                                    ~ "High",
       tstage == "T2b" |  
         (psa > 10 & psa <= 20) | 
         gleason == "7"                                                 ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a") &
         psa <= 10 & 
         gleason == "<=6"            ~ "Low",
       TRUE                          ~ NA_character_
@@ -137,7 +139,7 @@ seer_recoding <- function(seer_raw){
       tstage == "T2b" |
         gleason == "7" |
         between(psa, 10, 20)        ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a") & 
         psa < 10 & 
         gleason == "<=6"            ~ "Low",
       TRUE ~ NA_character_
@@ -242,14 +244,16 @@ ncdb_recoding <- function(ncdb_raw){
     )) %>%
     mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm=TRUE)) %>%
     # create risk classifications -----------------------------------
-    mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
+  # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
+  # https://staging.seer.cancer.gov/tnm/input/1.9/prostate/clin_t/?breadcrumbs=(~schema_list~),(~view_schema~,~prostate~)
+    mutate(damico = case_when( 
       tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
         psa > 20 | 
         gleason %in% c("8", "9-10") ~ "High",
       tstage == "T2b" |  
         (psa > 10 & psa <= 20) | 
         gleason == "7"              ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a") &
         psa <= 10 & 
         gleason == "<=6"            ~ "Low",
       TRUE                          ~ NA_character_
