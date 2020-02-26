@@ -153,17 +153,16 @@ seer_recoding <- function(seer_raw){
     mutate(eau = nice) %>%
     mutate(
       GUROC = case_when(
-        ########################################### check guroc what is ct1 ct2 and what means not otehrwise low risk
         psa > 20 |
           gleason %in% c("8", "9-10") |
-          tstage %in% c("T3a", "T3b", "T3c", "T4a", "T4b")                 ~ "High",
-        (psa > 10 & psa <= 20) &
-          gleason == "7" &
-          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")           ~ "Intermediate", ######### I add T2
+          tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b")                     ~ "High", # I add T3
+        psa <= 20 &
+          gleason %in% c("<=6", "7") &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c")       ~ "Intermediate", ######### I add T2
         psa <= 10 &
           gleason == "<=6" &
-          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")           ~ "Low",           ######### I add T2
-        TRUE                                                               ~ NA_character_
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")       ~ "Low",           ######### I add T2
+        TRUE                                                                         ~ NA_character_
       )) %>% 
     mutate(AUA = case_when(
       (psa >= 20) |
@@ -178,13 +177,13 @@ seer_recoding <- function(seer_raw){
       psa < 10 &
         isup == "1" &
         tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
-        percent_pos_cores < "34" #&
-      #psaD < "0.15"  -------------------------------------------------------------------- Problem                                                  
+        percent_pos_cores < 34 #&
+      #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information                                                  
       ~ "Very low Low",
       TRUE                                                               ~ NA_character_
     )) %>% 
     mutate(
-      AUAi = case_when(
+      AUAi = case_when( #---------------------------------------------------------------- I would remove that risk, cannot find it
         (psa >= 20) |
           isup %in% c("4", "5") |
           tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b")           ~ "High",
@@ -204,39 +203,43 @@ seer_recoding <- function(seer_raw){
         psa < 10 &
           isup == "1" &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
-          percent_pos_cores < "34" #&
-        #psaD < "0.15"  -------------------------------------------------------------------- Problem 
+          percent_pos_cores < 34 #&
+        #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information  
         ~ "Very low",
         TRUE                                                               ~ NA_character_
       )) %>% 
     mutate(
       NCCN = case_when(
-        # GG1 = "5" | ------------------------------------------------------------------ DO NOT HAVE
-        tstage %in% c("T3b", "T3c", "T4a", "T4b")                        ~ "Very High",
+        tstage %in% c("T3b", "T3c", "T4a", "T4b") |
+          CS9SITE %in% c("51", "52", "53", "54", "55")                     ~ "Very High", 
+        #----- CS9SITE Followed NCCN page, not in zelic _ https://www.nccn.org/patients/guidelines/content/PDF/prostate-patient.pdf#page=52
         psa > 20 |
           isup %in% c("4", "5") |
           tstage == "T3a"                                                   ~ "High", ############## and T3?
         (psa >= 10 & psa <= 20) |
           isup  %in% c("2", "3") |
-          tstage %in% c("T2b", "T2c")                                      ~ "Intermediate unfavorable",
+          tstage %in% c("T2b", "T2c") |
+          isup == "3" |
+          percent_pos_cores > 50                                         ~ "Intermediate unfavorable",
         (psa >= 10 & psa <= 20) |
-          isup == "2" |
+          isup %in% c("2", "3") |
           (tstage %in% c("T2b", "T2c")) &
-          percent_pos_cores < "50"                                            ~ "Intermediate favorable",
+          percent_pos_cores < 50 &
+          isup %in% c("1", "2")                                            ~ "Intermediate favorable",
         psa < 10 &
           isup == "1" &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")           ~ "Low",
         psa < 10 &
           isup == "1" &
           tstage %in% c("T1", "T1a", "T1b" , "T1c") &                             #################### only ct1c...
-          CS12SITE < "3" #&
+          CS12SITE %in% c("1", "2") #&
         #psaD < "0.15" ------------------------------------------------------ Problem                                                    
         ~ "Very low",
         TRUE                                                               ~ NA_character_
       )) %>% 
     mutate(
       CPG = case_when(
-        (psa > "20" &
+        (psa > 20 &
            isup == "4" &
            tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b")
         ) |

@@ -153,7 +153,7 @@ risk_risk <- seer %>%
     
   
   
-  
+seer[(which(seer$CS12SITE < 3)), c("PUBCSNUM", "CS12SITE")]
   
   
   
