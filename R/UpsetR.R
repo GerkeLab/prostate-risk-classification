@@ -103,15 +103,3 @@ upset(fromExpression(input),
       line.size = 1
 )
 
-
-# Jordan's code
-list_pop <- list(oneD = c(unique(ncdb[ncdb$damico_num == 1,]$PUBCSNUM)),
-                 oneN = c(unique(ncdb[ncdb$nice_num == 1,]$PUBCSNUM)),
-                 oneC = c(unique(ncdb[ncdb$capra_score_num == 1,]$PUBCSNUM)),
-                 twoD = c(unique(ncdb[ncdb$damico_num == 2,]$PUBCSNUM)),
-                 twoN = c(unique(ncdb[ncdb$nice_num == 2,]$PUBCSNUM)),
-                 twoC = c(unique(ncdb[ncdb$capra_score_num == 2,]$PUBCSNUM)),
-                 threeD = c(unique(ncdb[ncdb$damico_num == 3,]$PUBCSNUM)),
-                 threeN = c(unique(ncdb[ncdb$nice_num == 3,]$PUBCSNUM)),
-                 threeC = c(unique(ncdb[ncdb$capra_score_num == 3,]$PUBCSNUM)))
-
