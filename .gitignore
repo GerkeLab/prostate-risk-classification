@@ -18,6 +18,9 @@ data
 # Directories that start with _
 _*/
 
+# Drake directory
+.drake/
+
 ## https://github.com/github/gitignore/blob/master/R.gitignore
 # History files
 .Rhistory
