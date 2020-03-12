@@ -176,16 +176,16 @@ seer_risk_calc <- function(seer){
       )) %>% 
     mutate(AUA = case_when(
       (psa >= 20) |
-        isup %in% c("4", "5") |
+        isup %in% c(4, 5) |
         tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b")                    ~ "High",
       (psa >= 10 & psa < 20) |
-        isup %in% c("2", "3") |
+        isup %in% c(2, 3) |
         tstage %in% c("T2b", "T2c")                                               ~ "Intermediate",
       psa < 10 &
-        isup == "1" &
+        isup == 1 &
         tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")                    ~ "Low",
       psa < 10 &
-        isup == "1" &
+        isup == 1 &
         tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
         percent_pos_cores < 34 #&
       #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information                                                  
@@ -195,23 +195,23 @@ seer_risk_calc <- function(seer){
     mutate(
       AUAi = case_when( #---------------------------------------------------------------- I would remove that risk, cannot find it
         (psa >= 20) |
-          isup %in% c("4", "5") |
+          isup %in% c(4, 5) |
           tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b")                  ~ "High",
-        (isup == "2" &
+        (isup == 2 &
            ((psa == 10 & psa < 20) |
               tstage %in% c("T2b", "T2c")
            )) |
-          (isup == "3" &
+          (isup == 3 &
              psa < 20)                                                            ~ "Intermediate unfavorable",
-        (isup == "1" &
+        (isup == 1 &
            (psa == 10 & psa < 20)) |
-          (isup == "2" &
+          (isup == 2 &
              psa < 10)                                                            ~ "Intermediate favorable",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")                  ~ "Low",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
           percent_pos_cores < 34 #&
         #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information  
@@ -225,23 +225,23 @@ seer_risk_calc <- function(seer){
           CS9SITE %in% c("51", "52", "53", "54", "55")                            ~ "Very High", 
         #- CS9SITE Followed NCCN page, not in zelic _ https://www.nccn.org/patients/guidelines/content/PDF/prostate-patient.pdf#page=52
         psa > 20 |
-          isup %in% c("4", "5") |
+          isup %in% c(4, 5) |
           tstage %in% c("T3", "T3a")                                              ~ "High", # Added T3
         (psa >= 10 & psa <= 20) |
-          isup  %in% c("2", "3") |
+          isup  %in% c(2, 3) |
           tstage %in% c("T2b", "T2c") |
-          isup == "3" |
+          isup == 3 |
           percent_pos_cores > 50                                                  ~ "Intermediate unfavorable",
         (psa >= 10 & psa <= 20) |
-          isup %in% c("2", "3") |
+          isup %in% c(2, 3) |
           (tstage %in% c("T2b", "T2c")) &
           percent_pos_cores < 50 &
-          isup %in% c("1", "2")                                                   ~ "Intermediate favorable",
+          isup %in% c(1, 2)                                                   ~ "Intermediate favorable",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")                  ~ "Low",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c") &  # Added < T1c
           CS12SITE %in% c("1", "2")
         #psaD < "0.15" --- SEER doesn't have this information                                                    
@@ -251,25 +251,25 @@ seer_risk_calc <- function(seer){
     mutate(
       CPG = case_when( 
         #- based on https://www.ncbi.nlm.nih.gov/pubmed/27483464/
-        (psa > 20 & isup == "4") |
+        (psa > 20 & isup == 4) |
           (psa > 20 & tstage %in% c("T3", "T3a", "T3b", "T3c")) |
-          (isup == "4" &tstage %in% c("T3", "T3a", "T3b", "T3c")) |
-          isup == "5" |
+          (isup == 4 &tstage %in% c("T3", "T3a", "T3b", "T3c")) |
+          isup == 5 |
           tstage %in% c("T4", "T4a", "T4b")                                       ~ "Very High",
         psa > 20 |
-          isup == "4" |
+          isup == 4 |
           tstage %in% c("T3", "T3a", "T3b", "T3c")                                ~ "High",
         ((psa >= 10 & psa <= 20) &
-           isup  == "2" &
+           isup  == 2 &
            tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) 
         |
-          (isup == "3" &
+          (isup == 3 &
              tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) ~ "Intermediate unfavorable",                                             
-        isup == "2" |
+        isup == 2 |
           (psa >= 10 & psa <= 20) &
           tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Intermediate favorable",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Low",
         TRUE                                                                      ~ NA_character_
       )) %>% 
@@ -435,16 +435,16 @@ ncdb_risk_calc <- function(ncdb){
       )) %>% 
     mutate(AUA = case_when(
       (psa >= 20) |
-        isup %in% c("4", "5") |
+        isup %in% c(4, 5) |
         tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b")                    ~ "High",
       (psa >= 10 & psa < 20) |
-        isup %in% c("2", "3") |
+        isup %in% c(2, 3) |
         tstage %in% c("T2b", "T2c")                                               ~ "Intermediate",
       psa < 10 &
-        isup == "1" &
+        isup == 1 &
         tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")                    ~ "Low",
       psa < 10 &
-        isup == "1" &
+        isup == 1 &
         tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
         percent_pos_cores < 34 #&
       #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information                                                  
@@ -454,23 +454,23 @@ ncdb_risk_calc <- function(ncdb){
     mutate(
       AUAi = case_when( #---------------------------------------------------------------- I would remove that risk, cannot find it
         (psa >= 20) |
-          isup %in% c("4", "5") |
+          isup %in% c(4, 5) |
           tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b")                  ~ "High",
-        (isup == "2" &
+        (isup == 2 &
            ((psa == 10 & psa < 20) |
               tstage %in% c("T2b", "T2c")
            )) |
-          (isup == "3" &
+          (isup == 3 &
              psa < 20)                                                            ~ "Intermediate unfavorable",
-        (isup == "1" &
+        (isup == 1 &
            (psa == 10 & psa < 20)) |
-          (isup == "2" &
+          (isup == 2 &
              psa < 10)                                                            ~ "Intermediate favorable",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")                  ~ "Low",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
           percent_pos_cores < 34 #&
         #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information  
@@ -484,23 +484,23 @@ ncdb_risk_calc <- function(ncdb){
           CS_SITESPECIFIC_FACTOR_9 %in% c("51", "52", "53", "54", "55")                            ~ "Very High", 
         #- CS_SITESPECIFIC_FACTOR_9 Followed NCCN page, not in zelic _ https://www.nccn.org/patients/guidelines/content/PDF/prostate-patient.pdf#page=52
         psa > 20 |
-          isup %in% c("4", "5") |
+          isup %in% c(4, 5) |
           tstage %in% c("T3", "T3a")                                              ~ "High", # Added T3
         (psa >= 10 & psa <= 20) |
-          isup  %in% c("2", "3") |
+          isup  %in% c(2, 3) |
           tstage %in% c("T2b", "T2c") |
-          isup == "3" |
+          isup == 3 |
           percent_pos_cores > 50                                                  ~ "Intermediate unfavorable",
         (psa >= 10 & psa <= 20) |
-          isup %in% c("2", "3") |
+          isup %in% c(2, 3) |
           (tstage %in% c("T2b", "T2c")) &
           percent_pos_cores < 50 &
-          isup %in% c("1", "2")                                                   ~ "Intermediate favorable",
+          isup %in% c(1, 2)                                                   ~ "Intermediate favorable",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")                  ~ "Low",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c") &  # Added < T1c
           CS_SITESPECIFIC_FACTOR_12 %in% c("1", "2")
         #psaD < "0.15" --- SEER doesn't have this information                                                    
@@ -510,25 +510,25 @@ ncdb_risk_calc <- function(ncdb){
     mutate(
       CPG = case_when( 
         #- based on https://www.ncbi.nlm.nih.gov/pubmed/27483464/
-        (psa > 20 & isup == "4") |
+        (psa > 20 & isup == 4) |
           (psa > 20 & tstage %in% c("T3", "T3a", "T3b", "T3c")) |
-          (isup == "4" &tstage %in% c("T3", "T3a", "T3b", "T3c")) |
-          isup == "5" |
+          (isup == 4 &tstage %in% c("T3", "T3a", "T3b", "T3c")) |
+          isup == 5 |
           tstage %in% c("T4", "T4a", "T4b")                                       ~ "Very High",
         psa > 20 |
-          isup == "4" |
+          isup == 4 |
           tstage %in% c("T3", "T3a", "T3b", "T3c")                                ~ "High",
         ((psa >= 10 & psa <= 20) &
-           isup  == "2" &
+           isup  == 2 &
            tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) 
         |
-          (isup == "3" &
+          (isup == 3 &
              tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) ~ "Intermediate unfavorable",                                             
-        isup == "2" |
+        isup == 2 |
           (psa >= 10 & psa <= 20) &
           tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Intermediate favorable",
         psa < 10 &
-          isup == "1" &
+          isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Low",
         TRUE                                                                      ~ NA_character_
       )) %>% 
