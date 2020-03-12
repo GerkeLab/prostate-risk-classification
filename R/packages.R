@@ -5,5 +5,6 @@ library(SEERreadr)
 library(haven)
 library(tidyverse)
 library(survival)
+library(mice)
 
 plan("multisession")

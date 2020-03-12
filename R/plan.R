@@ -10,7 +10,11 @@ plan <- drake_plan(
   
   # cleaning the data files and creating risk classifications -------
   seer = seer_recoding(seer_raw),
-  ncdb = ncdb_recoding(ncdb_raw)#, 
+  ncdb = ncdb_recoding(ncdb_raw), 
+  
+  # imputation of risk score variables ------------------------------
+  seer_imputed = data_imputation(data = seer,
+                                 method = "mean")
   
   # creating dataset for machine learning proxy ---------------------
   # seer_ml = make_structured_noise(data = seer,

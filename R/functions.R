@@ -109,41 +109,41 @@ seer_recoding <- function(seer_raw){
     # not sure if the below is the correct method - currently we dont have any cases 
     # with all the info complete to calculate capra so I calculate as much as we can ... 
     # other option with the other paper did was to impute all missing and then calculate
-    mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = TRUE)) %>%
-    # create risk classifications -----------------------------------
-    mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
-      tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
-        psa > 20 | 
-        gleason %in% c("8", "9-10") ~ "High",
-      tstage == "T2b" |  
-        (psa > 10 & psa <= 20) | 
-        gleason == "7"              ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
-        psa <= 10 & 
-        gleason == "<=6"            ~ "Low",
-      TRUE                          ~ NA_character_
-    )) %>% 
-    mutate(nice = case_when( # need to figure out T2
-      tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T2c") | 
-        psa > 20 |
-        gleason %in% c("8", "9-10") ~ "High",
-      tstage == "T2b" |
-        gleason == "7" |
-        between(psa, 10, 20)        ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
-        psa < 10 & 
-        gleason == "<=6"            ~ "Low",
-      TRUE ~ NA_character_
-    )) %>% 
-    mutate(eau = nice) %>%
-    # create numeric versions of categories -------------------------
-    mutate_at(c("damico", "nice"),
-              .funs = list(num = ~ case_when(
-                . == "Low" ~ 1,
-                . == "Intermediate" ~ 2,
-                . == "High" ~ 3,
-                TRUE ~ NA_real_
-              ))) %>% 
+    # mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = TRUE)) %>%
+    # # create risk classifications -----------------------------------
+    # mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
+    #   tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
+    #     psa > 20 | 
+    #     gleason %in% c("8", "9-10") ~ "High",
+    #   tstage == "T2b" |  
+    #     (psa > 10 & psa <= 20) | 
+    #     gleason == "7"              ~ "Intermediate",
+    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
+    #     psa <= 10 & 
+    #     gleason == "<=6"            ~ "Low",
+    #   TRUE                          ~ NA_character_
+    # )) %>% 
+    # mutate(nice = case_when( # need to figure out T2
+    #   tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T2c") | 
+    #     psa > 20 |
+    #     gleason %in% c("8", "9-10") ~ "High",
+    #   tstage == "T2b" |
+    #     gleason == "7" |
+    #     between(psa, 10, 20)        ~ "Intermediate",
+    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
+    #     psa < 10 & 
+    #     gleason == "<=6"            ~ "Low",
+    #   TRUE ~ NA_character_
+    # )) %>% 
+    # mutate(eau = nice) %>%
+    # # create numeric versions of categories -------------------------
+    # mutate_at(c("damico", "nice"),
+    #           .funs = list(num = ~ case_when(
+    #             . == "Low" ~ 1,
+    #             . == "Intermediate" ~ 2,
+    #             . == "High" ~ 3,
+    #             TRUE ~ NA_real_
+    #           ))) %>% 
     # misc cleaning -------------------------------------------------
     mutate(os = case_when(
       STAT_REC == 0 ~ 1,
@@ -233,41 +233,41 @@ ncdb_recoding <- function(ncdb_raw){
       AGE >= 50 & AGE < 131 ~ 1,
       TRUE                  ~ NA_real_
     )) %>%
-    mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm=TRUE)) %>%
-    # create risk classifications -----------------------------------
-    mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
-      tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
-        psa > 20 | 
-        gleason %in% c("8", "9-10") ~ "High",
-      tstage == "T2b" |  
-        (psa > 10 & psa <= 20) | 
-        gleason == "7"              ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
-        psa <= 10 & 
-        gleason == "<=6"            ~ "Low",
-      TRUE                          ~ NA_character_
-    )) %>% 
-    mutate(nice = case_when( # need to figure out T2
-      tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T2c") | 
-        psa > 20 |
-        gleason %in% c("8", "9-10") ~ "High",
-      tstage == "T2b" |
-        gleason == "7" |
-        between(psa, 10, 20)        ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
-        psa < 10 & 
-        gleason == "<=6"            ~ "Low",
-      TRUE ~ NA_character_
-    )) %>% 
-    mutate(eau = nice) %>% 
-    # create numeric versions of categories -------------------------
-    mutate_at(c("damico", "nice"),
-              .funs = list(num = ~ case_when(
-                . == "Low" ~ 1,
-                . == "Intermediate" ~ 2,
-                . == "High" ~ 3,
-                TRUE ~ NA_real_
-              ))) %>% 
+    # mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm=TRUE)) %>%
+    # # create risk classifications -----------------------------------
+    # mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
+    #   tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
+    #     psa > 20 | 
+    #     gleason %in% c("8", "9-10") ~ "High",
+    #   tstage == "T2b" |  
+    #     (psa > 10 & psa <= 20) | 
+    #     gleason == "7"              ~ "Intermediate",
+    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
+    #     psa <= 10 & 
+    #     gleason == "<=6"            ~ "Low",
+    #   TRUE                          ~ NA_character_
+    # )) %>% 
+    # mutate(nice = case_when( # need to figure out T2
+    #   tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T2c") | 
+    #     psa > 20 |
+    #     gleason %in% c("8", "9-10") ~ "High",
+    #   tstage == "T2b" |
+    #     gleason == "7" |
+    #     between(psa, 10, 20)        ~ "Intermediate",
+    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
+    #     psa < 10 & 
+    #     gleason == "<=6"            ~ "Low",
+    #   TRUE ~ NA_character_
+    # )) %>% 
+    # mutate(eau = nice) %>% 
+    # # create numeric versions of categories -------------------------
+    # mutate_at(c("damico", "nice"),
+    #           .funs = list(num = ~ case_when(
+    #             . == "Low" ~ 1,
+    #             . == "Intermediate" ~ 2,
+    #             . == "High" ~ 3,
+    #             TRUE ~ NA_real_
+    #           ))) %>% 
     # misc cleaning -------------------------------------------------
     mutate(os = case_when(
       PUF_VITAL_STATUS == 1 ~ 0,
@@ -277,6 +277,54 @@ ncdb_recoding <- function(ncdb_raw){
   
 }
 
+# imputing variables for calculating risk scores ------------------------------
+
+impute_data <- function(data, 
+                        method = "mean",
+                        id = "PUBCSNUM",
+                        varlist = c("psa", "tstage", "gleason")){
+  
+  non_imp_vars <- setdiff(colnames(data), varlist)
+  imp_vars <- c(id, varlist)
+  
+  if (method == "mean"){
+    
+    data_imp <- data %>%
+      select(!!!imp_vars) %>%
+      mutate_if(is.numeric, funs(case_when(
+        is.na(.) ~ mean(., na.rm=TRUE),
+        TRUE ~ .
+      ))) %>%
+      mutate_if(negate(is.numeric), funs(case_when(
+        is.na(.) ~ unique(na.omit(.))[which.max(tabulate(match(.,unique(na.omit(.)))))],
+        TRUE ~ .
+      ))) %>%
+      left_join(data %>% 
+                  select(!!!non_imp_vars), by = id)
+    
+  }  else if (method == "median") {
+    
+    data_imp <- data %>%
+      select(!!!imp_vars) %>%
+      mutate_if(is.numeric, funs(case_when(
+        is.na(.) ~ median(., na.rm=TRUE),
+        TRUE ~ .
+      ))) %>%
+      mutate_if(negate(is.numeric), funs(case_when(
+        is.na(.) ~ unique(na.omit(.))[which.max(tabulate(match(.,unique(na.omit(.)))))],
+        TRUE ~ .
+      ))) %>%
+      left_join(data %>% 
+                  select(!!!non_imp_vars), by = id)
+  } else {
+    data_imp <- data %>%
+      select(!!!imp_vars) %>%
+      mice(m = 3, method = c('polyreg', 'pmm', 'polyreg', 'polyreg'),
+           seed = 8675309)
+  }
+}
+
+# making noisy data for ML ----------------------------------------------------
 make_structured_noise <- function(data,
                                   identifier, 
                                   outcome, 
