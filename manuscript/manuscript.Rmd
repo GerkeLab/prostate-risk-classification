@@ -1,0 +1,113 @@
+---
+output: html_document
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE)
+
+library(drake)
+library(tidyverse)
+
+```
+
+**Comparing prostate risk stratification tools**
+
+Jordan H. Creed
+Christelle 
+Travis A. Gerke 
+
+Department of Cancer Epidemiology, H. Lee Moffitt Cancer Center & Research Institute, 12902 USF Magnolia Drive, Tampa, FL, 33612, USA
+
+Key Words - prostate; risk-startification
+
+Corresponding author:
+Travis A. Gerke, ScD
+Department of Cancer Epidemiology
+H. Lee Moffitt Cancer Center and Research Institute 
+Tampa, FL 33612-9416
+Phone: 
+Fax:
+Email: travis.gerke@moffitt.org
+
+\newpage
+
+**Abstract**
+
+**Background:**
+
+**Methods:**
+
+**Results:**
+
+**Conclusions:**
+
+\newpage
+
+**Introduction**
+
+Pretreatment risk stratification tools are used to predict prostate cancer outcomes in men. The D'Amico risk startification system was originally proposed in ...
+
+We used Surveillance, Epidemiology, and End Results (SEER) and National Cancer Database (NCDB) prostate cancer databases to compare the performance of the following pretreatment risk stratification tools: D'Amico, NICE, EAU and CAPRA. 
+
+**Paticipants and Methods**
+
+*SEER*
+
+```{r seer_import}
+
+loadd(seer_raw)
+
+```
+
+SEER is a population-based database developed by the National Cancer Institute, US Center for Disease Control and Prevention and regional and state cancer registeries and includes cancer cases from 18 states [@doll2018]. 
+
+*NCDB*
+
+NCDB is the result of the joint efforts of the American College of Surgeons and the American Cancer Society and covers almost 70% of incident cancer cases [@boffa2017]. 
+
+**Statistical Analysis**
+
+Missing values used to determine the risk scores were imputed using multiple imputation, with XX imputations and XX iterations per imputation. 
+
+Risk classification was calculated for each risk stratification tool. For participants with T stage greater or lesser than those used in the original cutpoints, the nearest original point was used. Cox proportional hazard models (HR) and 95% confidence intervals for overall survival were conducted for each risk tool. In addition to crude model, models were adjusted for age, year of diagnosis, Charlson Comorbidity Index, marital status, education level and primary treatment.  
+
+All analyses were performed using R (version 3.5.0). 
+
+**Results**
+
+*SEER*
+
+A total of `r length(unique(seer_raw$PUBCSNUM))` men are included in the prostate cancer data for SEER. 
+
+*NCDB*
+
+**Discussion**
+
+**Conclusion**
+
+\newpage
+
+**Acknowledgements**
+
+The authors would like to thank the participants of SEER and NCDB. 
+
+**Author Contributions**
+
+TAG designed and directed research; JHC and TAG acquired the data; JHC and TAG analyzed and interpreted the data; JHC and TAG wrote the paper. 
+
+**Additional Information**
+
+**Funding:**
+
+**Conflict of Interest:** The authors declare that they have no conflict of interest. 
+
+**Informed Consent:** Informed consent was obtained...
+
+**Data Availability:** The datasets analysed during the current study are available from SEER and NCDB with an approved application. 
+
+\newpage
+
+**References**
