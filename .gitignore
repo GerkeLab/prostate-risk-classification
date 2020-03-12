@@ -20,7 +20,7 @@ _*/
 
 # Drake directory
 .drake/
-.drake/keys/
+.drake/keys/*
 
 ## https://github.com/github/gitignore/blob/master/R.gitignore
 # History files
