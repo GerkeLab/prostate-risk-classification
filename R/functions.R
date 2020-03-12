@@ -24,7 +24,10 @@ ncdb_import <- function(ncdb_path){
   
 }
 
-# data cleaning functions -----------------------------------------------------
+############################################### DATA ClEANING  ############################################################
+
+##############################################################################################################   SEER
+
 
 seer_recoding <- function(seer_raw){
   # create the necessary codings for calculating the risk scores -
@@ -116,7 +119,14 @@ seer_recoding <- function(seer_raw){
     # not sure if the below is the correct method - currently we dont have any cases 
     # with all the info complete to calculate capra so I calculate as much as we can ... 
     # other option with the other paper did was to impute all missing and then calculate
-    mutate(capra_point = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE)) %>%#-----------changed to false now that I have more data
+    mutate(capra_point = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE))#-----------changed to false now that I have more data
+}
+
+##############
+
+
+seer_risk_calc <- function(seer){
+  seer_risk <- seer %>% 
     mutate(capra_score = case_when(
       (capra_point >= 0 & capra_point <= 2)                                       ~ "Low",
       (capra_point >= 3 & capra_point <= 5)                                       ~ "Intermediate",
@@ -124,20 +134,20 @@ seer_recoding <- function(seer_raw){
       TRUE                                                                        ~ NA_character_
     )) %>% 
     # create risk classifications -----------------------------------
-    # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
-    # https://staging.seer.cancer.gov/tnm/input/1.9/prostate/clin_t/?breadcrumbs=(~schema_list~),(~view_schema~,~prostate~)
-    mutate(damico = case_when(
-      tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
-        psa > 20 | 
-        gleason %in% c("8", "9-10")                                               ~ "High",
-      tstage == "T2b" |  
-        (psa > 10 & psa <= 20) | 
-        gleason == "7"                                                            ~ "Intermediate",
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a") &
-        psa <= 10 & 
-        gleason == "<=6"                                                          ~ "Low",
-      TRUE                                                                        ~ NA_character_
-    )) %>% 
+  # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
+  # https://staging.seer.cancer.gov/tnm/input/1.9/prostate/clin_t/?breadcrumbs=(~schema_list~),(~view_schema~,~prostate~)
+  mutate(damico = case_when(
+    tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
+      psa > 20 | 
+      gleason %in% c("8", "9-10")                                               ~ "High",
+    tstage == "T2b" |  
+      (psa > 10 & psa <= 20) | 
+      gleason == "7"                                                            ~ "Intermediate",
+    tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a") &
+      psa <= 10 & 
+      gleason == "<=6"                                                          ~ "Low",
+    TRUE                                                                        ~ NA_character_
+  )) %>% 
     mutate(nice = case_when( 
       tstage %in% c("T2c", "T3", "T3a", "T3b", "T3c", "T4", "T4a", "T4b") | 
         psa > 20 |
@@ -179,7 +189,7 @@ seer_recoding <- function(seer_raw){
         tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
         percent_pos_cores < 34 #&
       #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information                                                  
-                                                                                  ~ "Very low Low",
+      ~ "Very low Low",
       TRUE                                                                        ~ NA_character_
     )) %>% 
     mutate(
@@ -205,7 +215,7 @@ seer_recoding <- function(seer_raw){
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
           percent_pos_cores < 34 #&
         #psaD < "0.15"  -------------------------------------------------------------------- SEER doesn't have this information  
-                                                                                  ~ "Very low",
+        ~ "Very low",
         TRUE                                                                      ~ NA_character_
       )) %>% 
     mutate(
@@ -252,38 +262,42 @@ seer_recoding <- function(seer_raw){
         ((psa >= 10 & psa <= 20) &
            isup  == "2" &
            tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) 
-           |
-           (isup == "3" &
+        |
+          (isup == "3" &
              tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) ~ "Intermediate unfavorable",                                             
         isup == "2" |
-           (psa >= 10 & psa <= 20) &
-           tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Intermediate favorable",
+          (psa >= 10 & psa <= 20) &
+          tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Intermediate favorable",
         psa < 10 &
           isup == "1" &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Low",
         TRUE                                                                      ~ NA_character_
       )) %>% 
     # create numeric versions of categories -------------------------
-    mutate_at(c("damico", "nice", "capra_score"),
-              .funs = list(num = ~ case_when(
-                . == "Low"                                                        ~ 1,
-                . == "Intermediate"                                               ~ 2,
-                . == "High"                                                       ~ 3,
-                TRUE                                                              ~ NA_real_
-              ))) %>% 
+  mutate_at(c("damico", "nice", "capra_score"),
+            .funs = list(num = ~ case_when(
+              . == "Low"                                                        ~ 1,
+              . == "Intermediate"                                               ~ 2,
+              . == "High"                                                       ~ 3,
+              TRUE                                                              ~ NA_real_
+            ))) %>% 
     # misc cleaning -------------------------------------------------
-    mutate(os = case_when(
-      STAT_REC == 0                                                               ~ 1,
-      STAT_REC == 1                                                               ~ 0,
-      TRUE                                                                        ~ NA_real_
-    )) %>% 
+  mutate(os = case_when(
+    STAT_REC == 0                                                               ~ 1,
+    STAT_REC == 1                                                               ~ 0,
+    TRUE                                                                        ~ NA_real_
+  )) %>% 
     mutate(SRV_TIME_MON = as.numeric(SRV_TIME_MON)) %>%
     mutate(SRV_TIME_MON = case_when(
       SRV_TIME_MON == 9999                                                        ~ NA_real_,
       TRUE                                                                        ~ SRV_TIME_MON
     ))
-  
 }
+
+
+
+##############################################################################################################   NCDB
+
 
 ncdb_recoding <- function(ncdb_raw){
   # create the necessary codings for calculating the risk scores -
@@ -366,7 +380,14 @@ ncdb_recoding <- function(ncdb_raw){
       AGE >= 50 & AGE < 131                                                       ~ 1,
       TRUE                                                                        ~ NA_real_
     )) %>%
-    mutate(capra_point = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE)) %>%
+    mutate(capra_point = rowSums(select(.,capra_psa:capra_age), na.rm = FALSE))
+}
+
+###################
+
+
+ncdb_risk_calc <- function(ncdb){
+  ncdb_risk <- ncdb %>%
     mutate(capra_score = case_when(
       (capra_point >= 0 & capra_point <= 2)                                       ~ "Low",
       (capra_point >= 3 & capra_point <= 5)                                       ~ "Intermediate",
@@ -512,26 +533,26 @@ ncdb_recoding <- function(ncdb_raw){
         TRUE                                                                      ~ NA_character_
       )) %>% 
     # create numeric versions of categories -------------------------
-    mutate_at(c("damico", "nice", "capra_score"),
-              .funs = list(num = ~ case_when(
-                . == "Low"                                                        ~ 1,
-                . == "Intermediate"                                               ~ 2,
-                . == "High"                                                       ~ 3,
-                TRUE                                                              ~ NA_real_
-              ))) #%>% 
-    # misc cleaning -------------------------------------------------
-    # mutate(os = case_when(
-    #   STAT_REC == 0                                                               ~ 1,
-    #   STAT_REC == 1                                                               ~ 0,
-    #   TRUE                                                                        ~ NA_real_
-    # )) %>% 
-    # mutate(SRV_TIME_MON = as.numeric(SRV_TIME_MON)) %>%
-    # mutate(SRV_TIME_MON = case_when(
-    #   SRV_TIME_MON == 9999                                                        ~ NA_real_,
-    #   TRUE                                                                        ~ SRV_TIME_MON
-    # ))
-  
+  mutate_at(c("damico", "nice", "capra_score"),
+            .funs = list(num = ~ case_when(
+              . == "Low"                                                        ~ 1,
+              . == "Intermediate"                                               ~ 2,
+              . == "High"                                                       ~ 3,
+              TRUE                                                              ~ NA_real_
+            ))) #%>% 
+  # misc cleaning -------------------------------------------------
+  # mutate(os = case_when(
+  #   STAT_REC == 0                                                               ~ 1,
+  #   STAT_REC == 1                                                               ~ 0,
+  #   TRUE                                                                        ~ NA_real_
+  # )) %>% 
+  # mutate(SRV_TIME_MON = as.numeric(SRV_TIME_MON)) %>%
+  # mutate(SRV_TIME_MON = case_when(
+  #   SRV_TIME_MON == 9999                                                        ~ NA_real_,
+  #   TRUE                                                                        ~ SRV_TIME_MON
+  # ))
 }
+
 
 make_structured_noise <- function(data,
                                   identifier, 
