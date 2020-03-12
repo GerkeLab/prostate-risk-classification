@@ -1,14 +1,14 @@
 ####################################### UpSet ####################################### 
 library(UpSetR)
-################################################################################# I ### SEER
+################################################################################# I ### seer_risk
 #count the difference
-DAM <- which(!is.na(seer$damico_num))
-CAP <- which(!is.na(seer$capra_score_num))
-NIC <- which(!is.na(seer$nice_num))
-NC <- which(seer$nice_num == seer$capra_score_num)
-CD <- which(seer$capra_score_num == seer$damico_num)
-ND <- which(seer$damico_num == seer$nice_num)
-aF <- seer[ND,]
+DAM <- which(!is.na(seer_risk$damico_num))
+CAP <- which(!is.na(seer_risk$capra_score_num))
+NIC <- which(!is.na(seer_risk$nice_num))
+NC <- which(seer_risk$nice_num == seer_risk$capra_score_num)
+CD <- which(seer_risk$capra_score_num == seer_risk$damico_num)
+ND <- which(seer_risk$damico_num == seer_risk$nice_num)
+aF <- seer_risk[ND,]
 NDC <- which(aF$damico_num == aF$capra_score_num)
 
 input <- c(
@@ -36,15 +36,15 @@ upset(fromExpression(input),
 
 
 # With Jordan's code
-list_global <- list(DAM_low = c(unique(seer[seer$damico_num == 1,]$PUBCSNUM)),
-                 NIC_low = c(unique(seer[seer$nice_num == 1,]$PUBCSNUM)),
-                 CAP_low = c(unique(seer[seer$capra_score_num == 1,]$PUBCSNUM)),
-                 DAM_int = c(unique(seer[seer$damico_num == 2,]$PUBCSNUM)),
-                 NIC_int = c(unique(seer[seer$nice_num == 2,]$PUBCSNUM)),
-                 CAP_int = c(unique(seer[seer$capra_score_num == 2,]$PUBCSNUM)),
-                 DAM_high = c(unique(seer[seer$damico_num == 3,]$PUBCSNUM)),
-                 NIC_high = c(unique(seer[seer$nice_num == 3,]$PUBCSNUM)),
-                 CAP_high = c(unique(seer[seer$capra_score_num == 3,]$PUBCSNUM)))
+list_global <- list(DAM_low = c(unique(seer_risk[seer_risk$damico_num == 1,]$PUBCSNUM)),
+                 NIC_low = c(unique(seer_risk[seer_risk$nice_num == 1,]$PUBCSNUM)),
+                 CAP_low = c(unique(seer_risk[seer_risk$capra_score_num == 1,]$PUBCSNUM)),
+                 DAM_int = c(unique(seer_risk[seer_risk$damico_num == 2,]$PUBCSNUM)),
+                 NIC_int = c(unique(seer_risk[seer_risk$nice_num == 2,]$PUBCSNUM)),
+                 CAP_int = c(unique(seer_risk[seer_risk$capra_score_num == 2,]$PUBCSNUM)),
+                 DAM_high = c(unique(seer_risk[seer_risk$damico_num == 3,]$PUBCSNUM)),
+                 NIC_high = c(unique(seer_risk[seer_risk$nice_num == 3,]$PUBCSNUM)),
+                 CAP_high = c(unique(seer_risk[seer_risk$capra_score_num == 3,]$PUBCSNUM)))
 upset(fromList(list_global),
       nsets = 9,
       order.by = "freq",
@@ -55,9 +55,9 @@ upset(fromList(list_global),
       #sets.bar.color = c("purple","sienna1","deepskyblue","yellowgreen","violet"),
 )
 
-list_low <- list(DAM_low = c(unique(seer[seer$damico_num == 1,]$PUBCSNUM)),
-                 NIC_low = c(unique(seer[seer$nice_num == 1,]$PUBCSNUM)),
-                 CAP_low = c(unique(seer[seer$capra_score_num == 1,]$PUBCSNUM)))
+list_low <- list(DAM_low = c(unique(seer_risk[seer_risk$damico_num == 1,]$PUBCSNUM)),
+                 NIC_low = c(unique(seer_risk[seer_risk$nice_num == 1,]$PUBCSNUM)),
+                 CAP_low = c(unique(seer_risk[seer_risk$capra_score_num == 1,]$PUBCSNUM)))
 upset(fromList(list_low),
       nintersects = NA,
       nsets = 3,
@@ -68,9 +68,9 @@ upset(fromList(list_low),
       text.scale = 1.3 
       #sets.bar.color = c("purple","sienna1","deepskyblue","yellowgreen","violet"),
 )
-list_intermediate <- list(DAM_int = c(unique(seer[seer$damico_num == 2,]$PUBCSNUM)),
-                          NIC_int = c(unique(seer[seer$nice_num == 2,]$PUBCSNUM)),
-                          CAP_int = c(unique(seer[seer$capra_score_num == 2,]$PUBCSNUM)))
+list_intermediate <- list(DAM_int = c(unique(seer_risk[seer_risk$damico_num == 2,]$PUBCSNUM)),
+                          NIC_int = c(unique(seer_risk[seer_risk$nice_num == 2,]$PUBCSNUM)),
+                          CAP_int = c(unique(seer_risk[seer_risk$capra_score_num == 2,]$PUBCSNUM)))
 upset(fromList(list_intermediate),
       nintersects = NA,
       nsets = 3,
@@ -82,9 +82,9 @@ upset(fromList(list_intermediate),
       #sets.bar.color = c("purple","sienna1","deepskyblue","yellowgreen","violet"),
 )
                     
-list_high <- list(DAM_high = c(unique(seer[seer$damico_num == 3,]$PUBCSNUM)),
-                  NIC_high = c(unique(seer[seer$nice_num == 3,]$PUBCSNUM)),
-                  CAP_high = c(unique(seer[seer$capra_score_num == 3,]$PUBCSNUM)))
+list_high <- list(DAM_high = c(unique(seer_risk[seer_risk$damico_num == 3,]$PUBCSNUM)),
+                  NIC_high = c(unique(seer_risk[seer_risk$nice_num == 3,]$PUBCSNUM)),
+                  CAP_high = c(unique(seer_risk[seer_risk$capra_score_num == 3,]$PUBCSNUM)))
 upset(fromList(list_high),
       nintersects = NA,
       nsets = 3,
@@ -135,9 +135,9 @@ upset(fromList(list_high),
 # )
 
 rm(NC, CD, ND, aF, NCD)
-############################################################################### III ### SEER only capra+ DF
+############################################################################### III ### seer_risk only capra+ DF
 
-positive_capra_score <- seer[which(!is.na(seer$capra_score_num)),]
+positive_capra_score <- seer_risk[which(!is.na(seer_risk$capra_score_num)),]
 cap_DAM <- which(!is.na(positive_capra_score$damico_num))
 cap_CAP <- which(!is.na(positive_capra_score$capra_score_num))
 cap_NIC <- which(!is.na(positive_capra_score$nice_num))
@@ -238,15 +238,15 @@ library(plotly)
 library(viridis)
 library(hrbrthemes)
 ##### Prep data
-a <- c("D'amico", "1", NROW(seer[which(seer$damico_num == 1),]), NROW(which(seer$damico_num == 1)) / NROW(DAM) *100)
-b <- c("D'amico", "2", NROW(seer[which(seer$damico_num == 2),]), NROW(which(seer$damico_num == 2)) / NROW(DAM) *100)
-c <- c("D'amico", "3", NROW(seer[which(seer$damico_num == 3),]), NROW(which(seer$damico_num == 3)) / NROW(DAM) *100)
-d <- c("Capra", "1", NROW(seer[which(seer$capra_score_num == 1),]), NROW(which(seer$capra_score_num == 1)) / NROW(CAP) *100)
-e <- c("Capra", "2", NROW(seer[which(seer$capra_score_num == 2),]), NROW(which(seer$capra_score_num == 2)) / NROW(CAP) *100)
-f <- c("Capra", "3", NROW(seer[which(seer$capra_score_num == 3),]), NROW(which(seer$capra_score_num == 3)) / NROW(CAP) *100)
-g <- c("NICE", "1", NROW(seer[which(seer$nice_num == 1),]), NROW(which(seer$nice_num == 1)) / NROW(NIC) *100)
-h <- c("NICE", "2", NROW(seer[which(seer$nice_num == 2),]), NROW(which(seer$nice_num == 2)) / NROW(NIC) *100)
-i <- c("NICE", "3", NROW(seer[which(seer$nice_num == 3),]), NROW(which(seer$nice_num == 3)) / NROW(NIC) *100)
+a <- c("D'amico", "1", NROW(seer_risk[which(seer_risk$damico_num == 1),]), NROW(which(seer_risk$damico_num == 1)) / NROW(DAM) *100)
+b <- c("D'amico", "2", NROW(seer_risk[which(seer_risk$damico_num == 2),]), NROW(which(seer_risk$damico_num == 2)) / NROW(DAM) *100)
+c <- c("D'amico", "3", NROW(seer_risk[which(seer_risk$damico_num == 3),]), NROW(which(seer_risk$damico_num == 3)) / NROW(DAM) *100)
+d <- c("Capra", "1", NROW(seer_risk[which(seer_risk$capra_score_num == 1),]), NROW(which(seer_risk$capra_score_num == 1)) / NROW(CAP) *100)
+e <- c("Capra", "2", NROW(seer_risk[which(seer_risk$capra_score_num == 2),]), NROW(which(seer_risk$capra_score_num == 2)) / NROW(CAP) *100)
+f <- c("Capra", "3", NROW(seer_risk[which(seer_risk$capra_score_num == 3),]), NROW(which(seer_risk$capra_score_num == 3)) / NROW(CAP) *100)
+g <- c("NICE", "1", NROW(seer_risk[which(seer_risk$nice_num == 1),]), NROW(which(seer_risk$nice_num == 1)) / NROW(NIC) *100)
+h <- c("NICE", "2", NROW(seer_risk[which(seer_risk$nice_num == 2),]), NROW(which(seer_risk$nice_num == 2)) / NROW(NIC) *100)
+i <- c("NICE", "3", NROW(seer_risk[which(seer_risk$nice_num == 3),]), NROW(which(seer_risk$nice_num == 3)) / NROW(NIC) *100)
 data <- data.frame(t(data.frame(a, b, c, d, e, f, g, h, i))) %>% 
   `colnames<-`(., c("risk_stratification", "risk", "number", "proportion"))
 data$risk <- as.numeric(data$risk)
