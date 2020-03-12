@@ -34,18 +34,22 @@ seer_recoding <- function(seer_raw){
   
   seer <- seer_raw %>% 
     # create variables for calulating risk scores -------------------
-    mutate(psa = as.numeric(CS1SITE)/10) %>% 
+    mutate_at(("CS1SITE"), ~ case_when( 
+      . %in% c("000","988", "989","990", "997", "998", "999") ~ NA_real_,
+      TRUE ~ as.numeric(.) 
+    )) %>%
+    mutate(psa = CS1SITE/10) %>% 
     mutate(gleason = case_when(
-      CS8SITE %in% c("988", "998", "999")               ~ NA_character_,
+      as.numeric(CS8SITE) > 10                          ~ NA_character_,
       CS8SITE %in% c("002", "003", "004", "005", "006") ~ "<=6",
       CS8SITE == "007"                                  ~ "7",
       CS8SITE == "008"                                  ~ "8",
       CS8SITE %in% c("009", "010")                      ~ "9-10"
     )) %>%
     mutate(tstage = case_when(
-      # need to double check what to do with TX NOS
-      #   DAJCCT: 19, 29, 39, 00, 01, 05
-      DAJCCT %in% c("99", "00", "01", "05", "88") ~ NA_character_,
+      # Remove TX and T0
+      # Added the NOS to their corresponding stage
+      DAJCCT %in% c("99", "00", "01", "05", "06", "07", "88") ~ NA_character_,
       DAJCCT %in% c("10", "19") ~ "T1",
       DAJCCT == "12" ~ "T1a",
       DAJCCT == "15" ~ "T1b",
@@ -63,10 +67,10 @@ seer_recoding <- function(seer_raw){
       DAJCCT == "42" ~ "T4b"
     )) %>%
     mutate(isup = case_when(
-      GRADE == "9"    ~ NA_real_,
-      TRUE ~ as.numeric(GRADE)
+      GRADE == "9" ~ NA_real_,
+      TRUE         ~ as.numeric(GRADE)
     )) %>%
-    mutate_at(c("CS12SITE", "CS13SITE"), 
+    mutate_at(c("CS12SITE", "CS13SITE", "CS12SITE"), 
               ~ case_when(
                 . %in% c("991", "988", "998", "999") ~ NA_real_,
                 TRUE ~ as.numeric(.)
@@ -83,18 +87,16 @@ seer_recoding <- function(seer_raw){
       psa > 30               ~ 4,
       TRUE ~ NA_real_
     )) %>%
-    mutate(capra_gleasan = case_when(
-      CS9SITE %in% c("11", "12", "13", "21", "22", "23",
-                     "31", "32" , "33")                  ~ 0,
-      CS9SITE %in% c("14", "15", "24", "25", "34", "35") ~ 1,
-      CS9SITE %in% c("41", "42", "43", "44", "45", "51",
-                     "52", "53", "54", "55")             ~ 3,
-      TRUE                                               ~ NA_real_
+    mutate(capra_gleason = case_when(
+      CS9SITE %in% c(11:13, 21:23, 31:33) ~ 0,
+      CS9SITE %in% c(14:15, 24:25, 34:35) ~ 1,
+      CS9SITE %in% c(41:45, 51:55)        ~ 3,
+      TRUE                                ~ NA_real_
     )) %>%
     mutate(capra_tstage = case_when(
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a")              ~ 0,
-      tstage %in% c("T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c") ~ 1,
-      TRUE                                                         ~ NA_real_
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c") ~ 0,
+      tstage %in% c("T3", "T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c")  ~ 1,
+      TRUE                                                                ~ NA_real_
     )) %>%
     mutate(capra_per_pos = case_when(
       percent_pos_cores < 34  ~ 0,
@@ -106,44 +108,6 @@ seer_recoding <- function(seer_raw){
       as.numeric(AGE_DX) >= 50 & as.numeric(AGE_DX) < 131 ~ 1,
       TRUE                                                ~ NA_real_
     )) %>%
-    # not sure if the below is the correct method - currently we dont have any cases 
-    # with all the info complete to calculate capra so I calculate as much as we can ... 
-    # other option with the other paper did was to impute all missing and then calculate
-    # mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = TRUE)) %>%
-    # # create risk classifications -----------------------------------
-    # mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
-    #   tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
-    #     psa > 20 | 
-    #     gleason %in% c("8", "9-10") ~ "High",
-    #   tstage == "T2b" |  
-    #     (psa > 10 & psa <= 20) | 
-    #     gleason == "7"              ~ "Intermediate",
-    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
-    #     psa <= 10 & 
-    #     gleason == "<=6"            ~ "Low",
-    #   TRUE                          ~ NA_character_
-    # )) %>% 
-    # mutate(nice = case_when( # need to figure out T2
-    #   tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T2c") | 
-    #     psa > 20 |
-    #     gleason %in% c("8", "9-10") ~ "High",
-    #   tstage == "T2b" |
-    #     gleason == "7" |
-    #     between(psa, 10, 20)        ~ "Intermediate",
-    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
-    #     psa < 10 & 
-    #     gleason == "<=6"            ~ "Low",
-    #   TRUE ~ NA_character_
-    # )) %>% 
-    # mutate(eau = nice) %>%
-    # # create numeric versions of categories -------------------------
-    # mutate_at(c("damico", "nice"),
-    #           .funs = list(num = ~ case_when(
-    #             . == "Low" ~ 1,
-    #             . == "Intermediate" ~ 2,
-    #             . == "High" ~ 3,
-    #             TRUE ~ NA_real_
-    #           ))) %>% 
     # misc cleaning -------------------------------------------------
     mutate(os = case_when(
       STAT_REC == 0 ~ 1,
@@ -168,11 +132,11 @@ ncdb_recoding <- function(ncdb_raw){
     # create variables for calulating risk scores -------------------
     mutate(psa = CS_SITESPECIFIC_FACTOR_1/10) %>% 
     mutate(gleason = case_when(
-      CS_SITESPECIFIC_FACTOR_8 %in% c(988:999) ~ NA_character_,
-      CS_SITESPECIFIC_FACTOR_8 %in% c(2:6)     ~ "<=6",
-      CS_SITESPECIFIC_FACTOR_8 == 7            ~ "7",
-      CS_SITESPECIFIC_FACTOR_8 == 8            ~ "8",
-      CS_SITESPECIFIC_FACTOR_8 %in% c(9, 10)   ~ "9-10"
+      CS_SITESPECIFIC_FACTOR_8 > 10 ~ NA_character_,
+      CS_SITESPECIFIC_FACTOR_8 <= 6 ~ "<=6",
+      CS_SITESPECIFIC_FACTOR_8 == 7 ~ "7",
+      CS_SITESPECIFIC_FACTOR_8 == 8 ~ "8",
+      CS_SITESPECIFIC_FACTOR_8 <= 10 ~ "9-10"
     )) %>%
     mutate(tstage = case_when(
       # need to double check what to do with : 0, 0A, 0IS
@@ -195,7 +159,8 @@ ncdb_recoding <- function(ncdb_raw){
       GRADE == 9 ~ NA_real_,
       TRUE       ~ GRADE
     )) %>%
-    mutate_at(c("CS_SITESPECIFIC_FACTOR_12", "CS_SITESPECIFIC_FACTOR_13"), 
+    mutate_at(c("CS_SITESPECIFIC_FACTOR_12", "CS_SITESPECIFIC_FACTOR_13",
+                "CS_SITESPECIFIC_FACTOR_9"), 
               ~ case_when(
                 . %in% c(991:999) ~ NA_real_,
                 TRUE ~ .
@@ -212,14 +177,14 @@ ncdb_recoding <- function(ncdb_raw){
       psa > 30               ~ 4,
       TRUE ~ NA_real_
     )) %>%
-    mutate(capra_gleasan = case_when(
+    mutate(capra_gleason = case_when(
       CS_SITESPECIFIC_FACTOR_9 %in% c(11:13, 21:23, 31:33) ~ 0,
       CS_SITESPECIFIC_FACTOR_9 %in% c(14:15, 24:25, 34:35) ~ 1,
       CS_SITESPECIFIC_FACTOR_9 %in% c(41:45, 51:55)        ~ 3,
       TRUE                                                 ~ NA_real_
     )) %>%
     mutate(capra_tstage = case_when(
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a")              ~ 0,
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")              ~ 0,
       tstage %in% c("T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c") ~ 1,
       TRUE                                                         ~ NA_real_
     )) %>%
@@ -233,41 +198,6 @@ ncdb_recoding <- function(ncdb_raw){
       AGE >= 50 & AGE < 131 ~ 1,
       TRUE                  ~ NA_real_
     )) %>%
-    # mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm=TRUE)) %>%
-    # # create risk classifications -----------------------------------
-    # mutate(damico = case_when( # need to figure out T2 - stages less than T1c and greater than T2c were included as low and high
-    #   tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") | 
-    #     psa > 20 | 
-    #     gleason %in% c("8", "9-10") ~ "High",
-    #   tstage == "T2b" |  
-    #     (psa > 10 & psa <= 20) | 
-    #     gleason == "7"              ~ "Intermediate",
-    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") &
-    #     psa <= 10 & 
-    #     gleason == "<=6"            ~ "Low",
-    #   TRUE                          ~ NA_character_
-    # )) %>% 
-    # mutate(nice = case_when( # need to figure out T2
-    #   tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T2c") | 
-    #     psa > 20 |
-    #     gleason %in% c("8", "9-10") ~ "High",
-    #   tstage == "T2b" |
-    #     gleason == "7" |
-    #     between(psa, 10, 20)        ~ "Intermediate",
-    #   tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a") & 
-    #     psa < 10 & 
-    #     gleason == "<=6"            ~ "Low",
-    #   TRUE ~ NA_character_
-    # )) %>% 
-    # mutate(eau = nice) %>% 
-    # # create numeric versions of categories -------------------------
-    # mutate_at(c("damico", "nice"),
-    #           .funs = list(num = ~ case_when(
-    #             . == "Low" ~ 1,
-    #             . == "Intermediate" ~ 2,
-    #             . == "High" ~ 3,
-    #             TRUE ~ NA_real_
-    #           ))) %>% 
     # misc cleaning -------------------------------------------------
     mutate(os = case_when(
       PUF_VITAL_STATUS == 1 ~ 0,
@@ -282,7 +212,11 @@ ncdb_recoding <- function(ncdb_raw){
 impute_data <- function(data, 
                         method = "mean",
                         id = "PUBCSNUM",
-                        varlist = c("psa", "tstage", "gleason")){
+                        varlist = c("psa", "tstage", "gleason", "isup",
+                                    "percent_pos_cores", "CS9SITE",
+                                    "CS12SITE", "capra_psa",
+                                    "capra_gleason", "capra_tstage",
+                                    "capra_per_pos", "capra_age")){
   
   non_imp_vars <- setdiff(colnames(data), varlist)
   imp_vars <- c(id, varlist)
@@ -316,14 +250,146 @@ impute_data <- function(data,
       ))) %>%
       left_join(data %>% 
                   select(!!!non_imp_vars), by = id)
-  } else {
-    data_imp <- data %>%
+  } else { # needs work -----------------------------------
+    imp <- data %>%
       select(!!!imp_vars) %>%
       mice(m = 3, method = c('polyreg', 'pmm', 'polyreg', 'polyreg'),
            seed = 8675309)
   }
 }
 
+# calculating risk scores -----------------------------------------------------
+
+risk_scores <- function(data,
+                        gleason_var = "CS9SITE",
+                        pos_cores_var = "CS12SITE"){
+  risk_data <- data %>% 
+    # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
+    # https://staging.seer.cancer.gov/tnm/input/1.9/prostate/clin_t/?breadcrumbs=(~schema_list~),(~view_schema~,~prostate~)
+    mutate(damico = case_when(
+      tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") |
+        psa > 20 |
+        gleason %in% c("8", "9-10") ~ "High",
+      tstage == "T2b" |
+        (psa > 10 & psa <= 20) |
+        gleason == "7"              ~ "Intermediate",
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a", "T2") &
+        psa <= 10 &
+        gleason == "<=6"            ~ "Low",
+      TRUE                          ~ NA_character_
+    )) %>%
+    mutate(nice = case_when( 
+      tstage %in% c("T2c", "T3", "T3a", "T3b", "T3c", "T4", "T4a", "T4b") | 
+        psa > 20 |
+        gleason %in% c("8", "9-10")                                               ~ "High",
+      tstage == "T2b" |
+        gleason == "7" |
+        between(psa, 10, 20)                                                      ~ "Intermediate",
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a") & 
+        psa < 10 & 
+        gleason == "<=6"                                                          ~ "Low",
+      TRUE                                                                        ~ NA_character_
+    )) %>%
+    mutate(eau = case_when(
+      tstage %in% c("T2c", "T3", "T4", "T3a", "T3b", "T3c", "T4a", "T4b") |
+        psa > 20 |
+        gleason %in% c("8", "9-10") ~ "High",
+      tstage == "T2b" |
+        (psa >= 10 & psa <= 20) |
+        gleason == "7"              ~ "Intermediate",
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2a", "T2") &
+        psa < 10 &
+        gleason == "<=6"            ~ "Low",
+      TRUE                          ~ NA_character_
+    )) %>%
+    mutate(
+      GUROC = case_when(
+        psa > 20 |
+          gleason %in% c("8", "9-10") |
+          tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High", 
+        psa <= 20 &
+          gleason %in% c("<=6", "7") &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c") ~ "Intermediate", 
+        psa <= 10 &
+          gleason == "<=6" &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")               ~ "Low", 
+        TRUE                                                                   ~ NA_character_
+    )) %>% 
+    # dont have PSAD values -----------------------------
+    # and dont have number of cores with >50% cancer ----
+    mutate(AUA = case_when( 
+      psa >= 20 |
+        isup %in% 4:5 |
+        tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High",
+      (psa >= 10 & psa < 20) |
+        isup %in% 2:3 |
+        tstage %in% c("T2b", "T2c")                                         ~ "Intermediate",
+      psa < 10 &
+        isup == 1 &
+        tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")              ~ "Low",
+      psa < 10 &
+        isup == 1 &
+        tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
+        percent_pos_cores < 34                                              ~ "Very Low",
+      TRUE                                                                  ~ NA_character_
+    )) %>% 
+    # still need to find reference for this -------------
+    # no information of PSAD ----------------------------
+    # no information on number of cores with >50% cancer 
+    mutate(AUAi = case_when(
+        psa >= 20 |
+          isup %in% 4:5 |
+          tstage %in% c("T3", "T3a", "T3b", "T3c", "T4", "T4a", "T4b", "T4c") ~ "High",
+        (isup == 2 & ((psa >= 10 & psa < 20) | tstage %in% c("T2b", "T2c")))  |
+          (isup == 3 & psa < 20)                                              ~ "Intermediate Unfavorable",
+        (isup == 1 & psa >= 10 & psa < 20) | (isup == 2 & psa < 10)           ~ "Intermediate Favorable",
+        psa < 10 & isup == 1 & tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") ~ "Low",
+        psa < 10 & isup == 1 &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
+          percent_pos_cores < 34                                              ~ "Very Low",
+        TRUE ~ NA_character_
+    )) %>%
+    # Followed NCCN guidelines (not zelic) : https://www.nccn.org/patients/guidelines/content/PDF/prostate-patient.pdf#page=52
+    # do not have info on individual cores gleason grades 
+    # dont have PSAD ----------------------------------
+    mutate(NCCN = case_when(
+        tstage %in% c("T3b", "T3c", "T4", "T4a", "T4b", "T4c") |
+          {{gleason_var}} %in% 51:55                          ~ "Very High", 
+        psa > 20 | isup %in% 4:5 | tstage %in% c("T3", "T3a") ~ "High", 
+        (psa >= 10 & psa <= 20 & isup %in% 2:3) | (psa >= 10 & psa <= 20 & tstage %in% c("T2b", "T2c")) |
+          (isup  %in% 2:3 & tstage %in% c("T2b", "T2c")) |
+          isup == 3 |
+          percent_pos_cores > 50                            ~ "Intermediate Unfavorable",
+        ((psa >= 10 & psa <= 20) | isup %in% 2:3 | tstage %in% c("T2b", "T2c")) &
+          percent_pos_cores < 50 &
+          isup %in% 1:2                                    ~ "Intermediate Favorable",
+        psa < 10 & isup == 1 &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") ~ "Low",
+        psa < 10 & isup == 1 &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c") &  
+          {{pos_cores_var}} %in% 1:2 ~ "Very Low",
+        TRUE  ~ NA_character_
+    )) %>% 
+    # https://www.ncbi.nlm.nih.gov/pubmed/27483464/ 
+    mutate(CPG = case_when( 
+      (psa > 20 & isup == 4) |
+        (psa > 20 & tstage %in% c("T3", "T3a", "T3b", "T3c")) |
+        (isup == 4 &tstage %in% c("T3", "T3a", "T3b", "T3c")) |
+        isup == 5 |
+        tstage %in% c("T4", "T4a", "T4b", "T4c") ~ "Very High",
+      psa > 20 | isup == 4 | tstage %in% c("T3", "T3a", "T3b", "T3c") ~ "High",
+      ((psa >= 10 & psa <= 20) & isup  == 2 &
+         tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) |
+        (isup == 3 &
+           tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")) ~ "Intermediate Unfavorable",                                             
+      isup == 2 | (psa >= 10 & psa <= 20) &
+        tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Intermediate Favorable",
+      psa < 10 & isup == 1 &
+        tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c")    ~ "Low",
+      TRUE                                                                      ~ NA_character_
+    )) %>%
+    mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = TRUE)) 
+}
 # making noisy data for ML ----------------------------------------------------
 make_structured_noise <- function(data,
                                   identifier, 
