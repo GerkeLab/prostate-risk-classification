@@ -88,9 +88,9 @@ seer_recoding <- function(seer_raw){
       TRUE ~ NA_real_
     )) %>%
     mutate(capra_gleason = case_when(
-      CS9SITE %in% c(11:13, 21:23, 31:33) ~ 0,
-      CS9SITE %in% c(14:15, 24:25, 34:35) ~ 1,
-      CS9SITE %in% c(41:45, 51:55)        ~ 3,
+      CS7SITE %in% c(11:13, 21:23, 31:33) ~ 0,
+      CS7SITE %in% c(14:15, 24:25, 34:35) ~ 1,
+      CS7SITE %in% c(41:45, 51:55)        ~ 3,
       TRUE                                ~ NA_real_
     )) %>%
     mutate(capra_tstage = case_when(
@@ -160,7 +160,7 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE       ~ GRADE
     )) %>%
     mutate_at(c("CS_SITESPECIFIC_FACTOR_12", "CS_SITESPECIFIC_FACTOR_13",
-                "CS_SITESPECIFIC_FACTOR_9"), 
+                "CS_SITESPECIFIC_FACTOR_7"), 
               ~ case_when(
                 . %in% c(991:999) ~ NA_real_,
                 TRUE ~ .
@@ -178,9 +178,9 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE ~ NA_real_
     )) %>%
     mutate(capra_gleason = case_when(
-      CS_SITESPECIFIC_FACTOR_9 %in% c(11:13, 21:23, 31:33) ~ 0,
-      CS_SITESPECIFIC_FACTOR_9 %in% c(14:15, 24:25, 34:35) ~ 1,
-      CS_SITESPECIFIC_FACTOR_9 %in% c(41:45, 51:55)        ~ 3,
+      CS_SITESPECIFIC_FACTOR_7 %in% c(11:13, 21:23, 31:33) ~ 0,
+      CS_SITESPECIFIC_FACTOR_7 %in% c(14:15, 24:25, 34:35) ~ 1,
+      CS_SITESPECIFIC_FACTOR_7 %in% c(41:45, 51:55)        ~ 3,
       TRUE                                                 ~ NA_real_
     )) %>%
     mutate(capra_tstage = case_when(
@@ -213,7 +213,7 @@ impute_data <- function(data,
                         method = "mean",
                         id = "PUBCSNUM",
                         varlist = c("psa", "tstage", "gleason", "isup",
-                                    "percent_pos_cores", "CS9SITE",
+                                    "percent_pos_cores", "CS7SITE",
                                     "CS12SITE", "capra_psa",
                                     "capra_gleason", "capra_tstage",
                                     "capra_per_pos", "capra_age")){
@@ -261,7 +261,7 @@ impute_data <- function(data,
 # calculating risk scores -----------------------------------------------------
 
 risk_scores <- function(data,
-                        gleason_var = "CS9SITE",
+                        gleason_var = "CS7SITE",
                         pos_cores_var = "CS12SITE"){
   risk_data <- data %>% 
     # Include T2 with T2a stage by reading SEER-NIH rules for abstraction
