@@ -160,7 +160,7 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE       ~ GRADE
     )) %>%
     mutate_at(c("CS_SITESPECIFIC_FACTOR_12", "CS_SITESPECIFIC_FACTOR_13",
-                "CS_SITESPECIFIC_FACTOR_7"), 
+                "CS_SITESPECIFIC_FACTOR_7"), # missing 988 and 099
               ~ case_when(
                 . %in% c(991:999) ~ NA_real_,
                 TRUE ~ .
