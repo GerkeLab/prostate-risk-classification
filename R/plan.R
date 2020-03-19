@@ -20,22 +20,22 @@ plan <- drake_plan(
                              id = "PUF_CASE_ID",
                              varlist = c("psa", "tstage", "gleason", "isup",
                                          "percent_pos_cores",
-                                         "CS_SITESPECIFIC_FACTOR_9",
+                                         "CS_SITESPECIFIC_FACTOR_7",
                                          "CS_SITESPECIFIC_FACTOR_12",
                                          "capra_psa","capra_gleason",
                                          "capra_tstage", "capra_per_pos", "capra_age")),
   
   # calculating risk scores -----------------------------------------
-  risk_seer = risk_scores(seer, gleason_var = "CS9SITE",
+  risk_seer = risk_scores(seer, gleason_var = "CS7SITE",
                           pos_cores_var = "CS12SITE"),
   risk_seer_imputed = risk_scores(seer_imputed,
-                                  gleason_var = "CS9SITE",
+                                  gleason_var = "CS7SITE",
                                   pos_cores_var = "CS12SITE"),
   risk_ncdb = risk_scores(ncdb, 
-                          gleason_var = "CS_SITESPECIFIC_FACTOR_9",
+                          gleason_var = "CS_SITESPECIFIC_FACTOR_7",
                           pos_cores_var = "CS_SITESPECIFIC_FACTOR_12"),
   risk_ncdb_imputed = risk_scores(ncdb_imputed, 
-                                  gleason_var = "CS_SITESPECIFIC_FACTOR_9",
+                                  gleason_var = "CS_SITESPECIFIC_FACTOR_7",
                                   pos_cores_var = "CS_SITESPECIFIC_FACTOR_12")
   
   
