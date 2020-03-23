@@ -89,3 +89,8 @@ Temporary Items
 .apdisk
 
 .drake_history*
+
+# add files that have been included in others working version 
+R/data_cleaning.R
+R/risk_class.R
+R/seer_cleaning.R
