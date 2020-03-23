@@ -307,8 +307,7 @@ risk_scores <- function(data,
         gleason == "<=6"            ~ "Low",
       TRUE                          ~ NA_character_
     )) %>%
-    mutate(
-      GUROC = case_when(
+    mutate(GUROC = case_when(
         psa > 20 |
           gleason %in% c("8", "9-10") |
           tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High", 
@@ -414,11 +413,11 @@ make_structured_noise <- function(data,
 
 # performance measures of predicting overall survival -------------------------
 
-ncdb_auc <- function(data,
-                     training_percentage = 0.70,
-                     outcome = "os",
-                     time_to_outcome = "DX_LASTCONTACT_DEATH_MONTHS",
-                     classifiers = c("capra_score")){
+calulate_c_index <- function(data,
+                             training_percentage = 0.70,
+                             outcome = "os",
+                             time_to_outcome = "DX_LASTCONTACT_DEATH_MONTHS",
+                             classifiers = c("capra_score")){
 
   training_data <- data %>% 
     drop_na({{outcome}}, {{time_to_outcome}}, {{classifiers}}) %>% 
