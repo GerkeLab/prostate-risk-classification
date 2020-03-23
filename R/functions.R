@@ -70,9 +70,14 @@ seer_recoding <- function(seer_raw){
       GRADE == "9" ~ NA_real_,
       TRUE         ~ as.numeric(GRADE)
     )) %>%
-    mutate_at(c("CS12SITE", "CS13SITE", "CS12SITE"), 
+    mutate_at(c("CS12SITE", "CS13SITE", "CS9SITE", "AGE_DX", "YEAR_DX"), 
               ~ case_when(
                 . %in% c("991", "988", "998", "999") ~ NA_real_,
+                TRUE ~ as.numeric(.)
+              )) %>% 
+    mutate_at(c("MAR_STAT"), 
+              ~ case_when(
+                . %in% c("9") ~ NA_real_,
                 TRUE ~ as.numeric(.)
               )) %>% 
     mutate(percent_pos_cores = (CS12SITE / CS13SITE) * 100) %>%
@@ -104,9 +109,9 @@ seer_recoding <- function(seer_raw){
       TRUE                   ~ NA_real_ 
     )) %>%
     mutate(capra_age = case_when(
-      as.numeric(AGE_DX) < 50                             ~  0,
-      as.numeric(AGE_DX) >= 50 & as.numeric(AGE_DX) < 131 ~ 1,
-      TRUE                                                ~ NA_real_
+      AGE_DX < 50                 ~  0,
+      AGE_DX >= 50 & AGE_DX < 131 ~ 1,
+      TRUE                        ~ NA_real_
     )) %>%
     # misc cleaning -------------------------------------------------
     mutate(os = case_when(
@@ -226,7 +231,7 @@ impute_data <- function(data,
     data_imp <- data %>%
       select(!!!imp_vars) %>%
       mutate_if(is.numeric, funs(case_when(
-        is.na(.) ~ mean(., na.rm=TRUE),
+        is.na(.) ~ round(mean(., na.rm=TRUE)),
         TRUE ~ .
       ))) %>%
       mutate_if(negate(is.numeric), funs(case_when(
@@ -390,6 +395,7 @@ risk_scores <- function(data,
     )) %>%
     mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = TRUE)) 
 }
+
 # making noisy data for ML ----------------------------------------------------
 make_structured_noise <- function(data,
                                   identifier, 
