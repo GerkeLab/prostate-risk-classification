@@ -1,19 +1,43 @@
 ---
-output: html_document
+title: "Comparing prostate risk stratification tools"
+date: '`r strftime(Sys.time(), "%A, %b %d, %Y")`'
+output:
+  rmarkdown::html_vignette:
+    df_print: kable
+    standalone: true
+  pdf_document: 
+    latex_engine: xelatex
+editor_options: 
+  chunk_output_type: console
 bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
-                      message = FALSE)
-
-library(drake)
-library(tidyverse)
+                      message = FALSE,
+                      cache = FALSE,
+                      fig.width = 10, fig.height = 7)
 
 ```
 
-**Comparing prostate risk stratification tools**
+```{css global-css, echo=FALSE}
+img {
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+}
+```
+
+```{r library, include=FALSE}
+library(drake)
+library(tidyverse)
+```
+
+```{r}
+loadd(risk_ncdb)
+loadd(risk_seer)
+```
 
 Jordan H. Creed
 Christelle 
@@ -86,12 +110,6 @@ NCCN, CPG and CAPRA, both overall and within European and African American men.
 
 *SEER*
 
-```{r seer_import}
-
-loadd(seer_raw)
-
-```
-
 SEER is a population-based database developed by the National Cancer Institute,
 US Center for Disease Control and Prevention and regional and state cancer 
 registeries and includes cancer cases from 18 states [@doll2018]. 
@@ -121,10 +139,12 @@ All analyses were performed using R (version 3.5.0).
 
 *SEER*
 
-A total of `r length(unique(seer_raw$PUBCSNUM))` men are included in the 
-prostate cancer data for SEER. 
+A total of `r length(unique(risk_seer$PUBCSNUM))` men are included in the 
+prostate cancer data for SEER. During followup, `r nrow(risk_seer[risk_seer$os==1,])` (`r round(nrow(risk_seer[risk_seer$os==1,])/nrow(risk_seer)*100, 2)`%) men died.
 
 *NCDB*
+
+In NCDB, there were `r length(unique(risk_ncdb$PUF_CASE_ID))` particiapnts with prostate cancer, of which `r nrow(risk_ncdb[risk_ncdb$os==1,])` (`r round(nrow(risk_ncdb[risk_ncdb$os==1,])/nrow(risk_ncdb)*100, 2)` %) died
 
 **Discussion**
 
@@ -158,6 +178,24 @@ available from SEER and NCDB with an approved application.
 
 ```{r table_ones}
 library(tableone)
+seer_vars <- c("AGE_DX", "YEAR_DX", "psa", "tstage", "gleason", 
+               "damico", "nice", "eau", "GUROC", "AUA", "AUAi", 
+               "NCCN", "CPG", "capra_score",
+               "SRV_TIME_MON", "os")
+table_one_seer <- CreateTableOne(vars = seer_vars, data = risk_seer)
+base_table <- print(table_one_seer)
+colnames_seer <- colnames(base_table)
+# table_one_seer_race <- CreateTableOne(vars = seer_vars, strata = c("RACE1V"), 
+# data = risk_seer)
+
+ncdb_vars <- c("AGE", "YEAR_OF_DIAGNOSIS", "psa", "tstage", "gleason", 
+               "damico", "nice", "eau", "GUROC", "AUA", "AUAi", 
+               "NCCN", "CPG", "capra_score",
+               "DX_LASTCONTACT_DEATH_MONTHS", "os")
+table_one_ncdb <- CreateTableOne(vars = ncdb_vars, data = risk_ncdb)
+# table_one_ncdb_race <- CreateTableOne(vars = ncdb_vars, strata = c("RACE"), data = risk_ncdb)
+base_table <- cbind(base_table, print(table_one_ncdb)[,1])
+base_table
 ```
 
 \newpage
