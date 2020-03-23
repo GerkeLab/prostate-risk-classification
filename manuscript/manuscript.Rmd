@@ -49,12 +49,38 @@ Email: travis.gerke@moffitt.org
 **Introduction**
 
 Pretreatment risk stratification tools are used to predict prostate cancer 
-outcomes in men. The D'Amico risk startification system was originally proposed
-in ...
+outcomes in men. However these tools were developed in cohorts with predominantly
+European ancestry. Meanwhile African American men (AAM) are disproportionally affected
+by prostate cancer, with AAM twice as likely than European American men (EAM) to
+die from the disease [@seer]. 
+
+The D'Amico risk stratification was developed in 1998 and is based on known 
+prognostic factors and a literature review and classifies individuals into low,
+intermediate and high risk of PSA failure [@damico1998]. 
+The National Institute of Health and Care Excellence (NICE) created their own 
+risk stratification for providing treatment recommendations to men with 
+localised prostate cancer [@graham2014]. The European Association of Urology 
+(EAU) guidelines aim to classify patients according to risk for biochemical 
+recurrence following treatment [@mottet2017]. The GU Radiation Oncologists of
+Canada (GUROC) also agree upon a low, intermediate and high risk stratification 
+for localised prostate cancer [@lukka2001], while the American Urological 
+Association (AUA) ...
+The National Comprehensive Care Network (NCCN) recommends managing treatment
+options and clinical decision making based off their risk stratification, which 
+includes additional very high and very low risk classifications as well as 
+further stratifying intermediate into favorable and unfavorable [@mohler2016].
+The Cambridge Prognostic Groups (CPG) propose a five-level risk startification system 
+for predicting prostate cancer specific mortality in non-metastatic prostate 
+cancer cases [@gnanapragasam2016]. The Cancer of the Prostate Risk Assessment 
+(CAPRA) score is a numeric risk score (ranging from one to ten) that assesses
+biochemical recurrence specifically after radical prostatectomy [@cooperberg2005].
+These risk stratification systems are all informed in some way by an individuals
+PSA, Gleason, and stage. 
 
 We used Surveillance, Epidemiology, and End Results (SEER) and National Cancer
 Database (NCDB) prostate cancer databases to compare the performance of the 
-following pretreatment risk stratification tools: D'Amico, NICE, EAU and CAPRA. 
+following pretreatment risk stratification tools: D'Amico, NICE, EAU, GUROC, AUA,
+NCCN, CPG and CAPRA, both overall and within European and African American men. 
 
 **Paticipants and Methods**
 
@@ -85,7 +111,9 @@ determined using the values available. Cox proportional hazard models
 (HR) and 95% confidence intervals for overall survival were conducted for each
 risk tool. In addition to crude model, models were adjusted for age (continuous),
 year of diagnosis (continuous), Charlson Comorbidity Index (not available for 
-SEER), marital status, education level (not available for SEER) and primary treatment.  
+SEER), marital status, education level (not available for SEER) and primary 
+treatment.  Analyses were performed overall and stratified by self-reported 
+race.
 
 All analyses were performed using R (version 3.5.0). 
 
