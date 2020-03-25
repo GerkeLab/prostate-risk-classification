@@ -428,17 +428,14 @@ calulate_c_index <- function(data,
     sample_frac(1-training_percentage) 
   
   basic_model <- coxph(Surv(DX_LASTCONTACT_DEATH_MONTHS, os) ~ capra_score,
-                       data = training_data,
-                       x = TRUE, y = TRUE)
+                       data = training_data)
   
-  predicted_values <- predict(basic_model, newdata = testing_data)
-  Surv.training <- Surv(training_data$DX_LASTCONTACT_DEATH_MONTHS, training_data$os)
-  Surv.testing <- Surv(testing_data$DX_LASTCONTACT_DEATH_MONTHS, testing_data$os)
-  times <- seq(0, 150, 1)
-  auc.uno <- AUC.uno(Surv.training, Surv.testing, predicted_values, times)
-  auc.uno$iauc
+  predicted_values <- predict(basic_model, newdata = testing_data,
+                              type="survival")
   
-  sens.uno(Surv.training, Surv.testing, predicted_values, times)
-  spec.uno(Surv.testing, predicted_values, times)
+  harrel <- Hmisc::rcorr.cens(predicted_values,
+                              with(testing_data, Surv(DX_LASTCONTACT_DEATH_MONTHS, os)))
+  
+  c_index <- harrel[["C Index"]]
  
 }

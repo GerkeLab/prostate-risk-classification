@@ -183,8 +183,9 @@ seer_vars <- c("AGE_DX", "YEAR_DX", "psa", "tstage", "gleason",
                "NCCN", "CPG", "capra_score",
                "SRV_TIME_MON", "os")
 table_one_seer <- CreateTableOne(vars = seer_vars, data = risk_seer)
-base_table <- print(table_one_seer)
+base_seer <- print(table_one_seer)
 colnames_seer <- colnames(base_table)
+base_seer <- c()
 # table_one_seer_race <- CreateTableOne(vars = seer_vars, strata = c("RACE1V"), 
 # data = risk_seer)
 
@@ -195,7 +196,7 @@ ncdb_vars <- c("AGE", "YEAR_OF_DIAGNOSIS", "psa", "tstage", "gleason",
 table_one_ncdb <- CreateTableOne(vars = ncdb_vars, data = risk_ncdb)
 # table_one_ncdb_race <- CreateTableOne(vars = ncdb_vars, strata = c("RACE"), data = risk_ncdb)
 base_table <- cbind(base_table, print(table_one_ncdb)[,1])
-base_table
+
 ```
 
 \newpage
