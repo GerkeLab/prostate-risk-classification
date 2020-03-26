@@ -183,25 +183,76 @@ seer_vars <- c("AGE_DX", "YEAR_DX", "psa", "tstage", "gleason",
                "NCCN", "CPG", "capra_score",
                "SRV_TIME_MON", "os")
 table_one_seer <- CreateTableOne(vars = seer_vars, data = risk_seer)
-base_seer <- print(table_one_seer)
-colnames_seer <- colnames(base_table)
-base_seer <- c()
-# table_one_seer_race <- CreateTableOne(vars = seer_vars, strata = c("RACE1V"), 
-# data = risk_seer)
+table_one_seer
+
 
 ncdb_vars <- c("AGE", "YEAR_OF_DIAGNOSIS", "psa", "tstage", "gleason", 
                "damico", "nice", "eau", "GUROC", "AUA", "AUAi", 
                "NCCN", "CPG", "capra_score",
                "DX_LASTCONTACT_DEATH_MONTHS", "os")
 table_one_ncdb <- CreateTableOne(vars = ncdb_vars, data = risk_ncdb)
-# table_one_ncdb_race <- CreateTableOne(vars = ncdb_vars, strata = c("RACE"), data = risk_ncdb)
-base_table <- cbind(base_table, print(table_one_ncdb)[,1])
+table_one_seer
 
 ```
 
 \newpage
 
 **Figures**
+
+```{r bar_proportions}
+library(viridis)
+
+risk_seer %>% 
+  select(PUBCSNUM, damico, nice, eau, GUROC, AUA, AUAi, NCCN, CPG) %>%
+  gather("classifier", "value", -PUBCSNUM) %>%
+  drop_na(value) %>%
+  group_by(classifier) %>%
+  mutate(total_number = n_distinct(PUBCSNUM)) %>%
+  group_by(classifier, value) %>%  
+  mutate(number = n_distinct(PUBCSNUM),
+         perc = (n_distinct(PUBCSNUM)/total_number)*100) %>%
+  distinct(classifier, value, .keep_all = TRUE) %>%
+  ungroup() %>%
+  mutate(value = factor(value, levels = c("Very High", "High", "Intermediate Unfavorable",
+                                          "Intermediate", "Intermediate Favorable",
+                                          "Low"))) %>%
+  ggplot(aes(x = classifier, y = perc, fill = value)) + 
+  geom_col() + 
+  scale_fill_viridis_d(option = "C", name = "") + 
+  labs(x = "Risk Classifier", y = "Percent (%)", 
+       title = "SEER") + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        legend.position="bottom")
+
+risk_ncdb %>% 
+  select(PUF_CASE_ID, damico, nice, eau, GUROC, AUA, AUAi, NCCN, CPG) %>%
+  gather("classifier", "value", -PUF_CASE_ID) %>%
+  drop_na(value) %>%
+  group_by(classifier) %>%
+  mutate(total_number = n_distinct(PUF_CASE_ID)) %>%
+  group_by(classifier, value) %>%  
+  mutate(number = n_distinct(PUF_CASE_ID),
+         perc = (n_distinct(PUF_CASE_ID)/total_number)*100) %>%
+  distinct(classifier, value, .keep_all = TRUE) %>%
+  ungroup() %>%
+  mutate(value = factor(value, levels = c("Very High", "High", "Intermediate Unfavorable",
+                                          "Intermediate", "Intermediate Favorable",
+                                          "Low"))) %>%
+  ggplot(aes(x = classifier, y = perc, fill = value)) + 
+  geom_col() + 
+  scale_fill_viridis_d(option = "C", name = "") + 
+  labs(x = "Risk Classifier", y = "Percent (%)", 
+       title = "NCDB") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        legend.position="bottom")
+
+```
 
 \newpage
 

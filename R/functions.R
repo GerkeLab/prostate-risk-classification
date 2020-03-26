@@ -414,21 +414,40 @@ make_structured_noise <- function(data,
 # performance measures of predicting overall survival -------------------------
 
 calulate_c_index <- function(data,
-                             training_percentage = 0.70,
+                             split = 0.7,
                              outcome = "os",
                              time_to_outcome = "DX_LASTCONTACT_DEATH_MONTHS",
                              classifiers = c("capra_score")){
 
-  training_data <- data %>% 
+  split_data <- data %>% 
     drop_na({{outcome}}, {{time_to_outcome}}, {{classifiers}}) %>% 
-    sample_frac(training_percentage) 
+    rsample::initial_split(prop = split)
   
-  testing_data <- data %>% 
-    drop_na({{outcome}}, {{time_to_outcome}}, {{classifiers}}) %>% 
-    sample_frac(1-training_percentage) 
+  coxph_formula <- function(outcome, classifiers) {
+    ## construct the call to coxph()
+    rlang::new_formula(
+      rlang::parse_expr(paste0(
+          "Surv(,", time_to_outcome, ", " , outcome, ")")
+        )),
+      rlang::parse_expr(classifiers)
+    )
+  }
   
-  basic_model <- coxph(Surv(DX_LASTCONTACT_DEATH_MONTHS, os) ~ capra_score,
-                       data = training_data)
+  coxph_model <- function(formula, data) {
+    eval(rlang::expr(survival::coxph(!!formula, data = data)))
+  }
+  
+  c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
+    mutate(formula = pmap(., coxph_formula)) %>%
+    mutate(model = map(formula, coxph_model, data = training(split_data))) %>%
+    mutate(pred = map(model, predict, type = "survival", newdata = testing(split_data)))
+  
+  
+  train <- testing(split_data) %>%
+    mutate(pred = map(c_data$model, ~predict(.x, type = "survival"))) 
+  
+  predicted_values <- basic_models %>%
+    map(~ predict(.x, newdata = data.frame(testing(split_data)), type = "survival"))
   
   predicted_values <- predict(basic_model, newdata = testing_data,
                               type="survival")
