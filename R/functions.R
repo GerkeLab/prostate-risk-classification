@@ -306,13 +306,14 @@ risk_scores <- function(data,
       GUROC = case_when(
         psa > 20 |
           gleason %in% c("8", "9-10") |
-          tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High", 
-        psa <= 20 &
-          gleason %in% c("<=6", "7") &
-          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c") ~ "Intermediate", 
+          tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High",
+        # wriie low before intermediate to compare with "not otherwise low risk
         psa <= 10 &
           gleason == "<=6" &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")               ~ "Low", 
+        psa <= 20 &
+          gleason %in% c("<=6", "7") &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c") ~ "Intermediate", 
         TRUE                                                                   ~ NA_character_
     )) %>% 
     # dont have PSAD values -----------------------------
