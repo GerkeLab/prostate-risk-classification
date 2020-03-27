@@ -70,7 +70,7 @@ seer_recoding <- function(seer_raw){
       GRADE == "9" ~ NA_real_,
       TRUE         ~ as.numeric(GRADE)
     )) %>%
-    mutate_at(c("CS12SITE", "CS13SITE", "CS12SITE"), 
+    mutate_at(c("CS12SITE", "CS13SITE", "CS7SITE"), 
               ~ case_when(
                 . %in% c("991", "988", "998", "999") ~ NA_real_,
                 TRUE ~ as.numeric(.)

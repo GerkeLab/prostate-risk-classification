@@ -1,15 +1,4 @@
-# There are two variables in the SEER data for estimating cause-specific survival probability 
-# due to ‘cancer’ or due to ‘other-causes’. The idea is to use these variables independently 
-# to estimate survival of specified cause of death (e.g. cancer, non-cancer). The ‘SEER 
-# cause-specific death classification’ variable is used to obtain cancer-specific survival 
-# probability for a given cohort of cancer patients. While, ‘SEER other cause of death 
-# classification’ variable is used to obtain the other-cause survival probability for the 
-# same cohort of patients. In the first variable, (SEER cause-specific death classification) 
-# deaths attributed to the cancer of interest are treated as events and deaths from other 
-# causes are treated as censored observation. The event of interest in the second variable 
-# (the ‘SEER other cause of death classification’) is the reverse, i.e., deaths attributed 
-# to causes other than cancer are treated as events and deaths from cancer are treated as 
-# censored observation. The causes of deaths codes are the same in both variables.
+
 
 
 # progression = 1
