@@ -71,8 +71,14 @@ seer_recoding <- function(seer_raw){
       TRUE         ~ as.numeric(GRADE)
     )) %>%
     mutate_at(c("CS12SITE", "CS13SITE", "CS7SITE"), 
+    mutate_at(c("CS12SITE", "CS13SITE", "CS9SITE", "AGE_DX", "YEAR_DX"), 
               ~ case_when(
                 . %in% c("991", "988", "998", "999") ~ NA_real_,
+                TRUE ~ as.numeric(.)
+              )) %>% 
+    mutate_at(c("MAR_STAT"), 
+              ~ case_when(
+                . %in% c("9") ~ NA_real_,
                 TRUE ~ as.numeric(.)
               )) %>% 
     mutate(percent_pos_cores = (CS12SITE / CS13SITE) * 100) %>%
@@ -104,9 +110,9 @@ seer_recoding <- function(seer_raw){
       TRUE                   ~ NA_real_ 
     )) %>%
     mutate(capra_age = case_when(
-      as.numeric(AGE_DX) < 50                             ~  0,
-      as.numeric(AGE_DX) >= 50 & as.numeric(AGE_DX) < 131 ~ 1,
-      TRUE                                                ~ NA_real_
+      AGE_DX < 50                 ~  0,
+      AGE_DX >= 50 & AGE_DX < 131 ~ 1,
+      TRUE                        ~ NA_real_
     )) %>%
     # misc cleaning -------------------------------------------------
     mutate(os = case_when(
@@ -226,7 +232,7 @@ impute_data <- function(data,
     data_imp <- data %>%
       select(!!!imp_vars) %>%
       mutate_if(is.numeric, funs(case_when(
-        is.na(.) ~ mean(., na.rm=TRUE),
+        is.na(.) ~ round(mean(., na.rm=TRUE)),
         TRUE ~ .
       ))) %>%
       mutate_if(negate(is.numeric), funs(case_when(
@@ -302,8 +308,7 @@ risk_scores <- function(data,
         gleason == "<=6"            ~ "Low",
       TRUE                          ~ NA_character_
     )) %>%
-    mutate(
-      GUROC = case_when(
+    mutate(GUROC = case_when(
         psa > 20 |
           gleason %in% c("8", "9-10") |
           tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High",
@@ -391,6 +396,7 @@ risk_scores <- function(data,
     )) %>%
     mutate(capra_score = rowSums(select(.,capra_psa:capra_age), na.rm = TRUE)) 
 }
+
 # making noisy data for ML ----------------------------------------------------
 make_structured_noise <- function(data,
                                   identifier, 
@@ -409,32 +415,48 @@ make_structured_noise <- function(data,
 
 # performance measures of predicting overall survival -------------------------
 
-ncdb_auc <- function(data,
-                     training_percentage = 0.70,
-                     outcome = "os",
-                     time_to_outcome = "DX_LASTCONTACT_DEATH_MONTHS",
-                     classifiers = c("capra_score")){
+calulate_c_index <- function(data,
+                             split = 0.7,
+                             outcome = "os",
+                             time_to_outcome = "DX_LASTCONTACT_DEATH_MONTHS",
+                             classifiers = c("capra_score")){
 
-  training_data <- data %>% 
+  split_data <- data %>% 
     drop_na({{outcome}}, {{time_to_outcome}}, {{classifiers}}) %>% 
-    sample_frac(training_percentage) 
+    rsample::initial_split(prop = split)
   
-  testing_data <- data %>% 
-    drop_na({{outcome}}, {{time_to_outcome}}, {{classifiers}}) %>% 
-    sample_frac(1-training_percentage) 
+  coxph_formula <- function(outcome, classifiers) {
+    ## construct the call to coxph()
+    rlang::new_formula(
+      rlang::parse_expr(paste0(
+          "Surv(,", time_to_outcome, ", " , outcome, ")")
+        )),
+      rlang::parse_expr(classifiers)
+    )
+  }
   
-  basic_model <- coxph(Surv(DX_LASTCONTACT_DEATH_MONTHS, os) ~ capra_score,
-                       data = training_data,
-                       x = TRUE, y = TRUE)
+  coxph_model <- function(formula, data) {
+    eval(rlang::expr(survival::coxph(!!formula, data = data)))
+  }
   
-  predicted_values <- predict(basic_model, newdata = testing_data)
-  Surv.training <- Surv(training_data$DX_LASTCONTACT_DEATH_MONTHS, training_data$os)
-  Surv.testing <- Surv(testing_data$DX_LASTCONTACT_DEATH_MONTHS, testing_data$os)
-  times <- seq(0, 150, 1)
-  auc.uno <- AUC.uno(Surv.training, Surv.testing, predicted_values, times)
-  auc.uno$iauc
+  c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
+    mutate(formula = pmap(., coxph_formula)) %>%
+    mutate(model = map(formula, coxph_model, data = training(split_data))) %>%
+    mutate(pred = map(model, predict, type = "survival", newdata = testing(split_data)))
   
-  sens.uno(Surv.training, Surv.testing, predicted_values, times)
-  spec.uno(Surv.testing, predicted_values, times)
+  
+  train <- testing(split_data) %>%
+    mutate(pred = map(c_data$model, ~predict(.x, type = "survival"))) 
+  
+  predicted_values <- basic_models %>%
+    map(~ predict(.x, newdata = data.frame(testing(split_data)), type = "survival"))
+  
+  predicted_values <- predict(basic_model, newdata = testing_data,
+                              type="survival")
+  
+  harrel <- Hmisc::rcorr.cens(predicted_values,
+                              with(testing_data, Surv(DX_LASTCONTACT_DEATH_MONTHS, os)))
+  
+  c_index <- harrel[["C Index"]]
  
 }
