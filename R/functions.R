@@ -214,54 +214,54 @@ ncdb_recoding <- function(ncdb_raw){
 
 # imputing variables for calculating risk scores ------------------------------
 
-impute_data <- function(data, 
-                        method = "mean",
-                        id = "PUBCSNUM",
-                        varlist = c("psa", "tstage", "gleason", "isup",
-                                    "percent_pos_cores", "CS7SITE",
-                                    "CS12SITE", "capra_psa",
-                                    "capra_gleason", "capra_tstage",
-                                    "capra_per_pos", "capra_age")){
-  
-  non_imp_vars <- setdiff(colnames(data), varlist)
-  imp_vars <- c(id, varlist)
-  
-  if (method == "mean"){
-    
-    data_imp <- data %>%
-      select(!!!imp_vars) %>%
-      mutate_if(is.numeric, funs(case_when(
-        is.na(.) ~ round(mean(., na.rm=TRUE)),
-        TRUE ~ .
-      ))) %>%
-      mutate_if(negate(is.numeric), funs(case_when(
-        is.na(.) ~ unique(na.omit(.))[which.max(tabulate(match(.,unique(na.omit(.)))))],
-        TRUE ~ .
-      ))) %>%
-      left_join(data %>% 
-                  select(!!!non_imp_vars), by = id)
-    
-  }  else if (method == "median") {
-    
-    data_imp <- data %>%
-      select(!!!imp_vars) %>%
-      mutate_if(is.numeric, funs(case_when(
-        is.na(.) ~ median(., na.rm=TRUE),
-        TRUE ~ .
-      ))) %>%
-      mutate_if(negate(is.numeric), funs(case_when(
-        is.na(.) ~ unique(na.omit(.))[which.max(tabulate(match(.,unique(na.omit(.)))))],
-        TRUE ~ .
-      ))) %>%
-      left_join(data %>% 
-                  select(!!!non_imp_vars), by = id)
-  } else { # needs work -----------------------------------
-    imp <- data %>%
-      select(!!!imp_vars) %>%
-      mice(m = 3, method = c('polyreg', 'pmm', 'polyreg', 'polyreg'),
-           seed = 8675309)
-  }
-}
+# impute_data <- function(data, 
+#                         method = "mean",
+#                         id = "PUBCSNUM",
+#                         varlist = c("psa", "tstage", "gleason", "isup",
+#                                     "percent_pos_cores", "CS7SITE",
+#                                     "CS12SITE", "capra_psa",
+#                                     "capra_gleason", "capra_tstage",
+#                                     "capra_per_pos", "capra_age")){
+#   
+#   non_imp_vars <- setdiff(colnames(data), varlist)
+#   imp_vars <- c(id, varlist)
+#   
+#   if (method == "mean"){
+#     
+#     data_imp <- data %>%
+#       select(!!!imp_vars) %>%
+#       mutate_if(is.numeric, funs(case_when(
+#         is.na(.) ~ round(mean(., na.rm=TRUE)),
+#         TRUE ~ .
+#       ))) %>%
+#       mutate_if(negate(is.numeric), funs(case_when(
+#         is.na(.) ~ unique(na.omit(.))[which.max(tabulate(match(.,unique(na.omit(.)))))],
+#         TRUE ~ .
+#       ))) %>%
+#       left_join(data %>% 
+#                   select(!!!non_imp_vars), by = id)
+#     
+#   }  else if (method == "median") {
+#     
+#     data_imp <- data %>%
+#       select(!!!imp_vars) %>%
+#       mutate_if(is.numeric, funs(case_when(
+#         is.na(.) ~ median(., na.rm=TRUE),
+#         TRUE ~ .
+#       ))) %>%
+#       mutate_if(negate(is.numeric), funs(case_when(
+#         is.na(.) ~ unique(na.omit(.))[which.max(tabulate(match(.,unique(na.omit(.)))))],
+#         TRUE ~ .
+#       ))) %>%
+#       left_join(data %>% 
+#                   select(!!!non_imp_vars), by = id)
+#   } else { # needs work ---
+#     imp <- data %>%
+#       select(!!!imp_vars) %>%
+#       mice(m = 3, method = c('polyreg', 'pmm', 'polyreg', 'polyreg'),
+#            seed = 8675309)
+#   }
+# }
 
 # calculating risk scores -----------------------------------------------------
 
@@ -396,20 +396,20 @@ risk_scores <- function(data,
 }
 
 # making noisy data for ML ----------------------------------------------------
-make_structured_noise <- function(data,
-                                  identifier, 
-                                  outcome, 
-                                  outcome_time, 
-                                  numeric_vars){
-  
-  data_ml <- data %>%
-    select({{identifier}}, {{outcome}}, {{outcome_time}}, contains("capra_"),
-           {{numeric_vars}}) %>% 
-    # mulitple versions of all numeric variables (not survival related)
-    mutate_at(c(contains("capra_"), numeric_vars), .funs = list(logged = ~ log(.))) %>% 
-    mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_2 = ~ .^(1/2))) %>% 
-    mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_3 = ~ .^(1/3))) 
-}
+# make_structured_noise <- function(data,
+#                                   identifier, 
+#                                   outcome, 
+#                                   outcome_time, 
+#                                   numeric_vars){
+#   
+#   data_ml <- data %>%
+#     select({{identifier}}, {{outcome}}, {{outcome_time}}, contains("capra_"),
+#            {{numeric_vars}}) %>% 
+#     # mulitple versions of all numeric variables (not survival related)
+#     mutate_at(c(contains("capra_"), numeric_vars), .funs = list(logged = ~ log(.))) %>% 
+#     mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_2 = ~ .^(1/2))) %>% 
+#     mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_3 = ~ .^(1/3))) 
+# }
 
 # performance measures of predicting overall survival -------------------------
 
@@ -427,8 +427,8 @@ calulate_c_index <- function(data,
     ## construct the call to coxph()
     rlang::new_formula(
       rlang::parse_expr(paste0(
-          "Surv(,", time_to_outcome, ", " , outcome, ")")
-        )),
+          "Surv(", time_to_outcome, ", " , outcome, ")")
+        ),
       rlang::parse_expr(classifiers)
     )
   }
@@ -437,20 +437,25 @@ calulate_c_index <- function(data,
     eval(rlang::expr(survival::coxph(!!formula, data = data)))
   }
   
+  coxph_predict <- function(model, newdata){
+    predict(model, type = "survival", newdata = newdata)
+  }
+  
+  c_index <- function(pred, data, outcome, time_to_outcome){
+    surv_object <- eval(rlang::parse_expr(paste0(
+        "with(", data, ", Surv(", time_to_outcome, ", " , outcome, "))")
+      ))
+    
+    Hmisc::rcorr.cens(pred, surv_object)
+  }
+  
   c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
     mutate(formula = pmap(., coxph_formula)) %>%
     mutate(model = map(formula, coxph_model, data = training(split_data))) %>%
-    mutate(pred = map(model, predict, type = "survival", newdata = testing(split_data)))
+    mutate(pred = map(model, predict, newdata = testing(split_data))) %>%
+    mutate(harrel = map(pred, c_index, data = testing(split_data), outcome = outcome,
+                        time_to_outcome = time_to_outcome))
   
-  
-  train <- testing(split_data) %>%
-    mutate(pred = map(c_data$model, ~predict(.x, type = "survival"))) 
-  
-  predicted_values <- basic_models %>%
-    map(~ predict(.x, newdata = data.frame(testing(split_data)), type = "survival"))
-  
-  predicted_values <- predict(basic_model, newdata = testing_data,
-                              type="survival")
   
   harrel <- Hmisc::rcorr.cens(predicted_values,
                               with(testing_data, Surv(DX_LASTCONTACT_DEATH_MONTHS, os)))

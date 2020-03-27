@@ -183,7 +183,7 @@ seer_vars <- c("AGE_DX", "YEAR_DX", "psa", "tstage", "gleason",
                "NCCN", "CPG", "capra_score",
                "SRV_TIME_MON", "os")
 table_one_seer <- CreateTableOne(vars = seer_vars, data = risk_seer)
-table_one_seer
+kableone(table_one_seer)
 
 
 ncdb_vars <- c("AGE", "YEAR_OF_DIAGNOSIS", "psa", "tstage", "gleason", 
@@ -191,7 +191,7 @@ ncdb_vars <- c("AGE", "YEAR_OF_DIAGNOSIS", "psa", "tstage", "gleason",
                "NCCN", "CPG", "capra_score",
                "DX_LASTCONTACT_DEATH_MONTHS", "os")
 table_one_ncdb <- CreateTableOne(vars = ncdb_vars, data = risk_ncdb)
-table_one_seer
+kableone(table_one_ncdb)
 
 ```
 
