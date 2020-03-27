@@ -72,7 +72,7 @@ seer_recoding <- function(seer_raw){
     )) %>%
     mutate_at(c("CS12SITE", "CS13SITE", "CS7SITE", "AGE_DX", "YEAR_DX"), 
               ~ case_when(
-                . %in% c("991", "988", "998", "999") ~ NA_real_,
+                . %in% c("991", "988", "998", "999", "990", "992", "993", "995", "997") ~ NA_real_,
                 TRUE ~ as.numeric(.)
               )) %>% 
     mutate_at(c("MAR_STAT"), 
