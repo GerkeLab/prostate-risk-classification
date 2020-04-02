@@ -458,7 +458,6 @@ calulate_c_index <- function(data,
     mutate(harrel = map(pred, c_index, data = testing(split_data), outcome = outcome,
                         time_to_outcome = time_to_outcome))
   
-  
   harrel <- Hmisc::rcorr.cens(predicted_values,
                               with(testing_data, Surv(DX_LASTCONTACT_DEATH_MONTHS, os)))
   
