@@ -398,20 +398,20 @@ risk_scores <- function(data,
 }
 
 # making noisy data for ML ----------------------------------------------------
-# make_structured_noise <- function(data,
-#                                   identifier, 
-#                                   outcome, 
-#                                   outcome_time, 
-#                                   numeric_vars){
-#   
-#   data_ml <- data %>%
-#     select({{identifier}}, {{outcome}}, {{outcome_time}}, contains("capra_"),
-#            {{numeric_vars}}) %>% 
-#     # mulitple versions of all numeric variables (not survival related)
-#     mutate_at(c(contains("capra_"), numeric_vars), .funs = list(logged = ~ log(.))) %>% 
-#     mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_2 = ~ .^(1/2))) %>% 
-#     mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_3 = ~ .^(1/3))) 
-# }
+make_structured_noise <- function(data,
+                                  identifier, 
+                                  outcome, 
+                                  outcome_time, 
+                                  numeric_vars){
+  
+  data_ml <- data %>%
+    select({{identifier}}, {{outcome}}, {{outcome_time}}, contains("capra_"),
+           {{numeric_vars}}) %>% 
+    # mulitple versions of all numeric variables (not survival related)
+    mutate_at(c(contains("capra_"), numeric_vars), .funs = list(logged = ~ log(.))) %>% 
+    mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_2 = ~ .^(1/2))) %>% 
+    mutate_at(c(contains("capra_"), numeric_vars), .funs = list(frac_poly_3 = ~ .^(1/3))) 
+}
 
 # performance measures of predicting overall survival -------------------------
 
@@ -429,8 +429,8 @@ calulate_c_index <- function(data,
     ## construct the call to coxph()
     rlang::new_formula(
       rlang::parse_expr(paste0(
-          "Surv(", time_to_outcome, ", " , outcome, ")")
-        ),
+          "Surv(,", time_to_outcome, ", " , outcome, ")")
+        )),
       rlang::parse_expr(classifiers)
     )
   }
@@ -454,9 +454,14 @@ calulate_c_index <- function(data,
   c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
     mutate(formula = pmap(., coxph_formula)) %>%
     mutate(model = map(formula, coxph_model, data = training(split_data))) %>%
-    mutate(pred = map(model, predict, newdata = testing(split_data))) %>%
-    mutate(harrel = map(pred, c_index, data = testing(split_data), outcome = outcome,
-                        time_to_outcome = time_to_outcome))
+    mutate(pred = map(model, predict, type = "survival", newdata = testing(split_data)))
+  
+  
+  train <- testing(split_data) %>%
+    mutate(pred = map(c_data$model, ~predict(.x, type = "survival"))) 
+  
+  predicted_values <- basic_models %>%
+    map(~ predict(.x, newdata = data.frame(testing(split_data)), type = "survival"))
   
   harrel <- Hmisc::rcorr.cens(predicted_values,
                               with(testing_data, Surv(DX_LASTCONTACT_DEATH_MONTHS, os)))
