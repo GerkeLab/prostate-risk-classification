@@ -49,6 +49,7 @@ seer_recoding <- function(seer_raw){
     mutate(tstage = case_when(
       # Remove TX and T0
       # Added the NOS to their corresponding stage
+      # Choose DAJCCT var over DAJCC7T because includes all patients (6-7) vs patients in edition 7th only
       DAJCCT %in% c("99", "00", "01", "05", "06", "07", "88") ~ NA_character_,
       DAJCCT %in% c("10", "19") ~ "T1",
       DAJCCT == "12" ~ "T1a",
@@ -115,8 +116,8 @@ seer_recoding <- function(seer_raw){
     )) %>%
     # misc cleaning -------------------------------------------------
     mutate(os = case_when(
-      STAT_REC == 0 ~ 1,
-      STAT_REC == 1 ~ 0,
+      STAT_REC == "0" ~ 1,
+      STAT_REC == "1" ~ 0,
       TRUE ~ NA_real_
     )) %>% 
     mutate(SRV_TIME_MON = as.numeric(SRV_TIME_MON)) %>%
@@ -165,7 +166,7 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE       ~ GRADE
     )) %>%
     mutate_at(c("CS_SITESPECIFIC_FACTOR_12", "CS_SITESPECIFIC_FACTOR_13",
-                "CS_SITESPECIFIC_FACTOR_7"), 
+                "CS_SITESPECIFIC_FACTOR_7"), # missing 988 and 099
               ~ case_when(
                 . %in% c(991:999) ~ NA_real_,
                 TRUE ~ .
@@ -255,7 +256,7 @@ ncdb_recoding <- function(ncdb_raw){
 #       ))) %>%
 #       left_join(data %>% 
 #                   select(!!!non_imp_vars), by = id)
-#   } else { # needs work ---
+#   } else { # needs work -----------------------------------
 #     imp <- data %>%
 #       select(!!!imp_vars) %>%
 #       mice(m = 3, method = c('polyreg', 'pmm', 'polyreg', 'polyreg'),
@@ -310,13 +311,14 @@ risk_scores <- function(data,
     mutate(GUROC = case_when(
         psa > 20 |
           gleason %in% c("8", "9-10") |
-          tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High", 
-        psa <= 20 &
-          gleason %in% c("<=6", "7") &
-          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c") ~ "Intermediate", 
+          tstage %in% c("T3", "T3a", "T3b", "T3c", "T4a", "T4b", "T4", "T4c") ~ "High",
+        # wriie low before intermediate to compare with "not otherwise low risk
         psa <= 10 &
           gleason == "<=6" &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")               ~ "Low", 
+        psa <= 20 &
+          gleason %in% c("<=6", "7") &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a", "T2b", "T2c") ~ "Intermediate", 
         TRUE                                                                   ~ NA_character_
     )) %>% 
     # dont have PSAD values -----------------------------
@@ -443,8 +445,8 @@ calulate_c_index <- function(data,
   
   c_index <- function(pred, data, outcome, time_to_outcome){
     surv_object <- eval(rlang::parse_expr(paste0(
-        "with(", data, ", Surv(", time_to_outcome, ", " , outcome, "))")
-      ))
+      "with(", data, ", Surv(", time_to_outcome, ", " , outcome, "))")
+    ))
     
     Hmisc::rcorr.cens(pred, surv_object)
   }
@@ -455,7 +457,6 @@ calulate_c_index <- function(data,
     mutate(pred = map(model, predict, newdata = testing(split_data))) %>%
     mutate(harrel = map(pred, c_index, data = testing(split_data), outcome = outcome,
                         time_to_outcome = time_to_outcome))
-  
   
   harrel <- Hmisc::rcorr.cens(predicted_values,
                               with(testing_data, Surv(DX_LASTCONTACT_DEATH_MONTHS, os)))
