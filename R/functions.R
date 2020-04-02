@@ -136,6 +136,10 @@ ncdb_recoding <- function(ncdb_raw){
   
   ncdb <- ncdb_raw %>% 
     # create variables for calulating risk scores -------------------
+    mutate_at(("CS_SITESPECIFIC_FACTOR_1"), ~ case_when( 
+      . > 998 ~ NA_real_, # need to check on ncdb ########################################## CCL
+      TRUE ~ . # Check its working ######################################################### CCL 
+    )) %>%
     mutate(psa = CS_SITESPECIFIC_FACTOR_1/10) %>% 
     mutate(gleason = case_when(
       CS_SITESPECIFIC_FACTOR_8 > 10 ~ NA_character_,
@@ -146,7 +150,7 @@ ncdb_recoding <- function(ncdb_raw){
     )) %>%
     mutate(tstage = case_when(
       # need to double check what to do with : 0, 0A, 0IS
-      TNM_CLIN_T %in% c("", "88", "c0", "cX", "pA", "pIS") ~ NA_character_,
+      TNM_CLIN_T %in% c("88", "c0", "cX", "pA", "pIS") ~ NA_character_,
       TNM_CLIN_T == "c1"  ~ "T1",
       TNM_CLIN_T == "c1A" ~ "T1a",
       TNM_CLIN_T == "c1B" ~ "T1b",
@@ -166,12 +170,12 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE       ~ GRADE
     )) %>%
     mutate_at(c("CS_SITESPECIFIC_FACTOR_12", "CS_SITESPECIFIC_FACTOR_13",
-                "CS_SITESPECIFIC_FACTOR_7"), # missing 988 and 099
+                "CS_SITESPECIFIC_FACTOR_7"),
               ~ case_when(
-                . %in% c(991:999) ~ NA_real_,
+                . %in% c(988:999) ~ NA_real_,
                 TRUE ~ .
               )) %>% 
-    mutate(percent_pos_cores = (CS_SITESPECIFIC_FACTOR_12 / CS_SITESPECIFIC_FACTOR_13) * 100) %>%
+    mutate(percent_pos_cores = (CS_SITESPECIFIC_FACTOR_12 / CS_SITESPECIFIC_FACTOR_13) * 100) %>% # Check table afetr rerun
     # create capra specific groups to add together - starting each 
     # variable name with "capra_" so they can be easily filtered
     # out later if need be and cleaning up spacing so easier to read 
@@ -184,15 +188,15 @@ ncdb_recoding <- function(ncdb_raw){
       TRUE ~ NA_real_
     )) %>%
     mutate(capra_gleason = case_when(
-      CS_SITESPECIFIC_FACTOR_7 %in% c(11:13, 21:23, 31:33) ~ 0,
+      CS_SITESPECIFIC_FACTOR_7 %in% c(11:13, 21:23, 31:33) ~ 0, # Check side by side
       CS_SITESPECIFIC_FACTOR_7 %in% c(14:15, 24:25, 34:35) ~ 1,
       CS_SITESPECIFIC_FACTOR_7 %in% c(41:45, 51:55)        ~ 3,
       TRUE                                                 ~ NA_real_
     )) %>%
     mutate(capra_tstage = case_when(
-      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")              ~ 0,
-      tstage %in% c("T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c") ~ 1,
-      TRUE                                                         ~ NA_real_
+      tstage %in% c("T1", "T1a", "T1b", "T1c", "T2", "T2a", "T2b", "T2c")    ~ 0,# Check side by side
+      tstage %in% c("T3a", "T3b","T3c", "T4", "T4a", "T4b", "T4c")           ~ 1,
+      TRUE                                                                   ~ NA_real_
     )) %>%
     mutate(capra_per_pos = case_when(
       percent_pos_cores < 34  ~ 0,
