@@ -144,9 +144,12 @@ prostate cancer data for SEER. During followup, `r nrow(risk_seer[risk_seer$os==
 
 *NCDB*
 
-In NCDB, there were `r length(unique(risk_ncdb$PUF_CASE_ID))` particiapnts with prostate cancer, of which `r nrow(risk_ncdb[risk_ncdb$os==1,])` (`r round(nrow(risk_ncdb[risk_ncdb$os==1,])/nrow(risk_ncdb)*100, 2)` %) died
+In NCDB, there were `r length(unique(risk_ncdb$PUF_CASE_ID))` particiapnts with prostate cancer, of which `r nrow(risk_ncdb[risk_ncdb$os==1,])` (`r round(nrow(risk_ncdb[risk_ncdb$os==1,])/nrow(risk_ncdb)*100, 2)` %) died. 
 
 **Discussion**
+
+* PCa-specific mortality only avilable for SEER (not available for NCDB) - treat as sensitivity analysis 
+* in TCGA - risk tools correlated with European ancestry estimates?  
 
 **Conclusion**
 

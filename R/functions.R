@@ -432,7 +432,9 @@ calulate_c_index <- function(data,
                              split = 0.7,
                              outcome = "os",
                              time_to_outcome = "DX_LASTCONTACT_DEATH_MONTHS",
-                             classifiers = c("capra_score")){
+                             classifiers = c("capra_score", "damico", "nice",
+                                             "eau", "GUROC", "AUA", "AUAi", 
+                                             "NCCN", "CPG")){
 
   split_data <- data %>% 
     drop_na({{outcome}}, {{time_to_outcome}}, {{classifiers}}) %>% 
@@ -452,28 +454,29 @@ calulate_c_index <- function(data,
     eval(rlang::expr(survival::coxph(!!formula, data = data)))
   }
   
-  coxph_predict <- function(model, newdata){
-    predict(model, type = "survival", newdata = newdata)
+  coxph_concordance <- function(coxph_model, data){
+    x <- update(coxph_model, data = data)
+    return(x$concordance[[6]])
   }
   
-  c_index <- function(pred, data, outcome, time_to_outcome){
-    surv_object <- eval(rlang::parse_expr(paste0(
-      "with(", data, ", Surv(", time_to_outcome, ", " , outcome, "))")
-    ))
-    
-    Hmisc::rcorr.cens(pred, surv_object)
-  }
+  # coxph_predict <- function(model, newdata){
+  #   predict(model, type = "survival", newdata = newdata)
+  # }
+  # 
+  # c_index <- function(pred, data, outcome, time_to_outcome){
+  #   surv_object <- eval(rlang::parse_expr(paste0(
+  #     "with(", data, ", Surv(", time_to_outcome, ", " , outcome, "))")
+  #   ))
+  #   
+  #   Hmisc::rcorr.cens(pred, surv_object)
+  # }
   
   c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
     mutate(formula = pmap(., coxph_formula)) %>%
     mutate(model = map(formula, coxph_model, data = training(split_data))) %>%
-    mutate(pred = map(model, predict, newdata = testing(split_data))) %>%
-    mutate(harrel = map(pred, c_index, data = testing(split_data), outcome = outcome,
-                        time_to_outcome = time_to_outcome))
+    mutate(concord = map(model, coxph_concordance, data = testing(split_data)))
   
-  harrel <- Hmisc::rcorr.cens(predicted_values,
-                              with(testing_data, Surv(DX_LASTCONTACT_DEATH_MONTHS, os)))
-  
-  c_index <- harrel[["C Index"]]
+  return(c_data)
+
  
 }
