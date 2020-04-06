@@ -120,6 +120,10 @@ seer_recoding <- function(seer_raw){
       STAT_REC == "1" ~ 0,
       TRUE ~ NA_real_
     )) %>% 
+    mutate(os_pca = case_when(
+      PRIMSITE == "C619" & VSRTSADX == "1" ~ 1,
+      TRUE ~ 0
+    )) %>%
     mutate(SRV_TIME_MON = as.numeric(SRV_TIME_MON)) %>%
     mutate(SRV_TIME_MON = case_when(
       SRV_TIME_MON == 9999 ~ NA_real_,
@@ -150,7 +154,7 @@ ncdb_recoding <- function(ncdb_raw){
     )) %>%
     mutate(tstage = case_when(
       # need to double check what to do with : 0, 0A, 0IS -> removed because non detectable
-      TNM_CLIN_T %in% c("88", "c0", "cX", "pA", "pIS") ~ NA_character_,
+      TNM_CLIN_T %in% c("","88", "c0", "cX", "pA", "pIS") ~ NA_character_,
       TNM_CLIN_T == "c1"  ~ "T1",
       TNM_CLIN_T == "c1A" ~ "T1a",
       TNM_CLIN_T == "c1B" ~ "T1b",
