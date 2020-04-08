@@ -37,6 +37,8 @@ library(tidyverse)
 ```{r}
 loadd(risk_ncdb)
 loadd(risk_seer)
+loadd(seer_c_index)
+loadd(ncdb_c_index)
 ```
 
 Jordan H. Creed
@@ -152,7 +154,8 @@ prostate cancer data for SEER. The men are predominantly white (n =
 and during followup, `r nrow(risk_seer[risk_seer$os==1,])` 
 (`r round(nrow(risk_seer[risk_seer$os==1,])/nrow(risk_seer)*100, 2)` %
 ) men died. Across all risk strifications, the overall crudec-index ranges from 
-`r min(unlist(seer_c_index$concord))` to `r max(unlist(seer_c_index$concord))`. 
+`r round(min(unlist(seer_c_index$concord_crude)), 3)` to 
+`r round(max(unlist(seer_c_index$concord_crude)), 3)`. 
 The lowest c-index was obsered for D'Amico, NICE and EAU at 0.604, while the 
 highest was GCP at 0.693. 
 
@@ -164,8 +167,8 @@ prostate cancer, of which `r nrow(risk_ncdb[risk_ncdb$RACE==1,])`
 white and `r nrow(risk_ncdb[risk_ncdb$os==1,])` 
 (`r round(nrow(risk_ncdb[risk_ncdb$os==1,])/nrow(risk_ncdb)*100, 2)` %) died. 
 In NCDB, the overall crude c-index values were lowest for D'Amico, NICE and EAU at 
-`r min(unlist(ncdb_c_index$concord)))`, while the highest at 
-`r max(unlist(ncdb_c_index$concord)))` was observed in GCP. 
+`r round(min(unlist(ncdb_c_index$concord_crude)), 3)`, while the highest at 
+`r round(max(unlist(ncdb_c_index$concord_crude)), 3)` was observed in GCP. 
 
 **Discussion**
 

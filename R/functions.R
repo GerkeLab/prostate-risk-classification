@@ -462,7 +462,7 @@ calulate_c_index <- function(data,
     )
   }
   
-  coxph_formula_full <- function(outcome, classifiers) {
+  coxph_formula_full <- function(outcome, classifiers, covariates) {
     ## construct the call to coxph()
     rlang::new_formula(
       rlang::parse_expr(paste0(
@@ -499,11 +499,11 @@ calulate_c_index <- function(data,
                              data = training(split_data))) %>%
     mutate(concord_crude = map(model_crude, coxph_concordance,
                                data = testing(split_data))) %>%
-    mutate(formula_full = pmap(., coxph_formula_full)) %>%
-    mutate(model_full = map(formula_full, coxph_model,
-                            data = training(split_data))) %>%
-    mutate(concord_full = map(model_full, coxph_concordance,
-                              data = testing(split_data)))
+    mutate(formula_full = pmap(., coxph_formula_full)) # %>%
+    # mutate(model_full = map(formula_full, coxph_model,
+    #                         data = training(split_data))) %>%
+    # mutate(concord_full = map(model_full, coxph_concordance,
+    #                           data = testing(split_data)))
   
   return(c_data)
 
