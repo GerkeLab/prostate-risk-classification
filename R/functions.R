@@ -115,6 +115,17 @@ seer_recoding <- function(seer_raw){
       TRUE                        ~ NA_real_
     )) %>%
     # misc cleaning -------------------------------------------------
+    mutate(race = case_when(
+      RAC_RECA == 1 ~ "white",
+      RAC_RECA == 2 ~ "black",
+      RAC_RECA == 3 ~ "other",
+      RAC_RECA == 7 ~ "other - unspecified",
+      TRUE ~ "unknown"
+    )) %>%
+    mutate(marital_status = case_when(
+      MAR_STAT %in% c(2,6) ~ 1,
+      TRUE ~ 0
+    )) %>%
     mutate(os = case_when(
       STAT_REC == "0" ~ 1,
       STAT_REC == "1" ~ 0,
@@ -434,7 +445,8 @@ calulate_c_index <- function(data,
                              time_to_outcome = "DX_LASTCONTACT_DEATH_MONTHS",
                              classifiers = c("capra_score", "damico", "nice",
                                              "eau", "GUROC", "AUA", "AUAi", 
-                                             "NCCN", "CPG")){
+                                             "NCCN", "CPG"),
+                             covariates = c("AGE")){
 
   split_data <- data %>% 
     drop_na({{outcome}}, {{time_to_outcome}}, {{classifiers}}) %>% 
@@ -447,6 +459,16 @@ calulate_c_index <- function(data,
           "Surv(", time_to_outcome, ", " , outcome, ")")
         ),
       rlang::parse_expr(classifiers)
+    )
+  }
+  
+  coxph_formula_full <- function(outcome, classifiers) {
+    ## construct the call to coxph()
+    rlang::new_formula(
+      rlang::parse_expr(paste0(
+        "Surv(", time_to_outcome, ", " , outcome, ")")
+      ),
+      rlang::parse_expr(paste(c(classifiers, covariates), collapse = " + "))
     )
   }
   
@@ -472,9 +494,16 @@ calulate_c_index <- function(data,
   # }
   
   c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
-    mutate(formula = pmap(., coxph_formula)) %>%
-    mutate(model = map(formula, coxph_model, data = training(split_data))) %>%
-    mutate(concord = map(model, coxph_concordance, data = testing(split_data)))
+    mutate(formula_crude = pmap(., coxph_formula)) %>%
+    mutate(model_crude = map(formula_crude, coxph_model,
+                             data = training(split_data))) %>%
+    mutate(concord_crude = map(model_crude, coxph_concordance,
+                               data = testing(split_data))) %>%
+    mutate(formula_full = pmap(., coxph_formula_full)) %>%
+    mutate(model_full = map(formula_full, coxph_model,
+                            data = training(split_data))) %>%
+    mutate(concord_full = map(model_full, coxph_concordance,
+                              data = testing(split_data)))
   
   return(c_data)
 
