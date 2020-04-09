@@ -33,28 +33,31 @@ seer_treat <- seer_read_fwf(paste0(tx,"/.TXT"),
 # Waiting for the access
 
 ################ NCDB
-
+# All patients are prostate cancer as primary site so no need to filter
 
 treatment_ncdb <- ncdb %>% 
   mutate(active_surv = case_when(
-    RX_SUMM_TREATMENT_STATUS == 2 ~ "active",
+    RX_SUMM_TREATMENT_STATUS == 2 ~ "active", # verified that all active surv are not given a treatment
+    RX_SUMM_TREATMENT_STATUS == 1 |
+      !is.na(DX_RX_STARTED_DAYS) ~ "treatment given",
     TRUE ~ NA_character_
   )) %>% 
-  mutate(treatment_given = case_when(
-    RX_SUMM_TREATMENT_STATUS == 1 ~ "treatment given"
-  )) %>% 
-  mutate(treatment_given1 = case_when(
-    !is.na(DX_RX_STARTED_DAYS)  ~ "treatment given"
-  )) %>% 
+  # mutate(treatment_given = case_when(
+  #   RX_SUMM_TREATMENT_STATUS == 1 ~ "treatment_given"
+  # )) %>% 
+  # mutate(treatment_given1 = case_when(
+  #   !is.na(DX_RX_STARTED_DAYS)  ~ "treatment given"
+   #%>% 
   mutate(surgery = case_when(
-    !is.na(DX_SURG_STARTED_DAYS) ~ "surgery" 
-    # could be primary site, lymph node and other surgery but not biopsies
+    REASON_FOR_NO_SURGERY %in% c(5, 9) ~ "diag_at_autopsy or died before surgery",
+    !is.na(DX_DEFSURG_STARTED_DAYS) ~ "prostate",
+    # not recorded before 2003
+    !is.na(DX_SURG_STARTED_DAYS) ~ "other_site"
+    # DX_SURG_STARTED_DAYS could be primary site, lymph node and other surgery but not biopsies
   )) %>% 
-  mutate(surgery_primary_site = case_when(
-    !is.na(DX_DEFSURG_STARTED_DAYS) &
-      PRIMARY_SITE == "C61.9" ~ "surgery" 
-    # for primary site ########## Need to look-up for primary site recode
-  )) %>% 
+  # mutate(prostate_surgery_primary_site = case_when( 
+  #   !is.na(DX_DEFSURG_STARTED_DAYS) ~ "prostate" 
+  # )) %>% 
   mutate(no_surgery = case_when(
     REASON_FOR_NO_SURGERY %in% c(5, 9) ~ "diag_at_autopsy or died before surgery"
   )) %>% 
@@ -80,18 +83,21 @@ treatment_ncdb <- ncdb %>%
   mutate(type_systemic_treatment = case_when(
     RX_SUMM_CHEMO %in% c(01, 02, 03) ~ "chemo",
     RX_SUMM_HORMONE == 01 ~ "Hormone therapy",
-    RX_SUMM_IMMUNOTHERAPY == 01,
+    RX_SUMM_IMMUNOTHERAPY == 01 ~ "Immunotherapy",
     RX_SUMM_TRNSPLNT_ENDO %in% c(10, 11,12, 20) ~ "Hematologic transplant",
-    RX_SUMM_OTHER %in% c(1:3) ~ "Other recommended treatments",
-    PALLIATIVE_CARE %in% c(1:7) ~ "Palliative care"
+    RX_SUMM_OTHER %in% c(1:3) ~ "Other recommended treatments"
+  ))%>% 
+  mutate(Palliative_care = case_when( # Can do a mutate_at
+    PALLIATIVE_CARE %in% c(1:6) ~ "Received Palliative"
   ))
-  
-  
 
 
+b <- treatment_ncdb[treatment_ncdb$PALLIATIVE_CARE %in% c(1:7), c("PALLIATIVE_CARE", "type_systemic_treatment")]
 
-
-
-
+# Check active
+a <- treatment_ncdb[treatment_ncdb$treatment_given1 == "treatment given",]
+table(treatment_ncdb$active_surv == "active")
+tail(table(ncdb$DX_RX_STARTED_DAYS))
+which(ncdb$DX_RX_STARTED_DAYS == "444")
 
 
