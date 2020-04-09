@@ -107,8 +107,13 @@ treatment_ncdb <- ncdb %>%
     PALLIATIVE_CARE %in% c(1:6) ~ "Received Palliative"
   ))
 
-
 b <- treatment_ncdb[treatment_ncdb$PALLIATIVE_CARE %in% c(1:7), c("PALLIATIVE_CARE", "type_systemic_treatment")]
+
+# Check active
+a <- treatment_ncdb[treatment_ncdb$treatment_given1 == "treatment given",]
+table(treatment_ncdb$active_surv == "active")
+tail(table(ncdb$DX_RX_STARTED_DAYS))
+which(ncdb$DX_RX_STARTED_DAYS == "444")
 
 # Check active
 a <- treatment_ncdb[treatment_ncdb$treatment_given1 == "treatment given",]
