@@ -52,7 +52,7 @@ treatment_ncdb <- ncdb %>%
   # mutate(prossurg = case_when(
   #   RX_SUMM_SURG_PRIM_SITE %in% c(10:90) ~ "prossurg"
   # )) %>% 
-  mutate(dx_of_first_prostate_surg_only = case_when( 
+  mutate(dx_of_first_surg_prostate_only = case_when( 
     # I filtered the dx of all first surgery by when patient had prostate surg first
     REASON_FOR_NO_SURGERY == 0 |
       RX_SUMM_SURG_PRIM_SITE %in% c(10:90) ~ as.numeric(DX_SURG_STARTED_DAYS),
@@ -61,32 +61,42 @@ treatment_ncdb <- ncdb %>%
   mutate(died_prior_surgery_planned_recommended = case_when(
     REASON_FOR_NO_SURGERY == 5 ~ "death_prior_surg",
     TRUE ~NA_character_
-  ))
-  
-  
-class(ncdb$DX_SURG_STARTED_DAYS)  
-  
-  
-  
-  mutate(radiation = case_when(
-    RX_SUMM_RADIATION %in% c(1,2,3,4,5) |
-      !is.na(DX_RAD_STARTED_DAYS) ~ "Radiation administered"
   )) %>% 
+  mutate(dx_of_first_rad_prostate_only = case_when(
+    # filtered the dx of all first rad by when patient had prostate rad first
+    REASON_FOR_NO_RADIATION == 0 |
+      RAD_REGIONAL_RX_MODALITY %in% c(20:98) |
+      RX_SUMM_RADIATION %in% c(1:5) |
+      RAD_TREAT_VOL == 41 ~ as.numeric(DX_RAD_STARTED_DAYS),
+    TRUE ~ NA_real_
+  )) %>% 
+  mutate(died_prior_radiation_planned_recommended = case_when(
+    REASON_FOR_NO_RADIATION == 5 |
+      RAD_REGIONAL_RX_MODALITY == 99 ~ "death_prior_rad",
+    TRUE ~ NA_real_
+  )) %>% 
+  mutate(diag_at_autopsy = case_when(
+     death == YEAR_OF_DIAGNOSIS ~ "diagnose_at_autopsy",
+    TRUE ~ NA_real_
+  )) %>% 
+  # We cannot use rx_summ_sungraded_seq to determine what treatment came first bc include all surg
+  # mutate(time_of_rad = case_when(
+  #   RX_SUMM_SURGRAD_SEQ == 2 ~ "before surgery",
+  #   RX_SUMM_SURGRAD_SEQ == 3 ~ "after surgery",
+  #   RX_SUMM_SURGRAD_SEQ == 4 ~ "before and after",
+  #   RX_SUMM_SURGRAD_SEQ == 5 ~ "during surgery"
+  # )) %>% 
   mutate(rad_site = case_when(
-    RAD_TREAT_VOL %in% c(1:98) & # rad as first course treatment
+    # rad site for the first course treatment # will probably not use as is
+    RAD_TREAT_VOL %in% c(1:98) & 
       RAD_TREAT_VOL != 41 ~ "other_site",
     RAD_TREAT_VOL == 41 ~ "prostate"
-  )) %>% 
-  mutate(time_of_rad = case_when(
-    RX_SUMM_SURGRAD_SEQ == 2 ~ "before surgery",
-    RX_SUMM_SURGRAD_SEQ == 3 ~ "after surgery",
-    RX_SUMM_SURGRAD_SEQ == 4 ~ "before and after",
-    RX_SUMM_SURGRAD_SEQ == 5 ~ "during surgery"
-  )) %>% 
-  mutate(norad = case_when(
-    REASON_FOR_NO_RADIATION %in% c(5, 9) ~ "diag_at_autopsy or died before surgery", # WRONG
-    RAD_TREAT_VOL == 00 ~ "raddiag_at_autopsy"
-  )) %>% 
+  )) 
+  
+
+  mutate(systemic)
+ 
+  
   mutate(systemic_treatment = case_when(
     !is.na(DX_SYSTEMIC_STARTED_DAYS) ~ "systemic treatment administered"
   )) %>% 
