@@ -23,35 +23,51 @@
 # Special codes for hematopoietic, reticuloendothelial, immunoproliferative, myeloproliferative diseases; ill- defined sites; and unknown primaries (See site-specific codes for the sites and histologies), except death certificate only
 # Unknown if surgery performed; death certificate only
 
-######### Code
-
-
+################################################################################################ SEER ################ 
+# To get acces to chemo and radiation data need to ask for 1 access
+# To get acces to active sur data need to ask for 1 other access
   
-col_treat <- seer_read_col_positions(fs::path(seer_path, "read.seer.research.and.treatment.nov2018.sas"))
-seer_treat <- seer_read_fwf(paste0(tx,"/.TXT"),
-                   col_positions = col_treat)
+# col_treat <- seer_read_col_positions(fs::path(seer_path, "read.seer.research.and.treatment.nov2018.sas"))
+# seer_treat <- seer_read_fwf(paste0(tx,"/.TXT"),
+#                    col_positions = col_treat)
 # Waiting for the access
 
-################ NCDB
+################################################################################################ NCDB ################ 
 # All patients are prostate cancer as primary site so no need to filter
 
 treatment_ncdb <- ncdb %>% 
   mutate(active_surv = case_when(
-    RX_SUMM_TREATMENT_STATUS == 2 ~ "active", # verified that all active surv are not given a treatment
+    RX_SUMM_TREATMENT_STATUS == 2 ~ "active_surv", # I verified that all active surv are not given a treatment
     RX_SUMM_TREATMENT_STATUS == 1 | # is missing a lot of value compare to the next bc reported for >= 2010
-      !is.na(DX_RX_STARTED_DAYS) ~ "treatment given",
+      !is.na(DX_RX_STARTED_DAYS) ~ "treatment_given",
     TRUE ~ NA_character_
   )) %>% 
-  mutate(surgery = case_when(
-    !is.na(DX_DEFSURG_STARTED_DAYS) ~ "prostate",
+  #mutate(last_prostate_surg = case_when(
+   # !is.na(DX_DEFSURG_STARTED_DAYS) ~ "last_prostate_surg",
     # not recorded before 2003
-    !is.na(DX_SURG_STARTED_DAYS) ~ "other_site",
+    #!is.na(DX_SURG_STARTED_DAYS) ~ "other_site",
     # DX_SURG_STARTED_DAYS could be (minus primary site) lymph node and other surgery but not biopsies
-    REASON_FOR_NO_SURGERY == 9 ~ "diag_at_autopsy or died before surgery"
+    # REASON_FOR_NO_SURGERY == 9 ~ "diag_at_autopsy or died before surgery"
+  # )) %>% 
+  # mutate(prossurg = case_when(
+  #   RX_SUMM_SURG_PRIM_SITE %in% c(10:90) ~ "prossurg"
+  # )) %>% 
+  mutate(dx_of_first_prostate_surg_only = case_when( 
+    # I filtered the dx of all first surgery by when patient had prostate surg first
+    REASON_FOR_NO_SURGERY == 0 |
+      RX_SUMM_SURG_PRIM_SITE %in% c(10:90) ~ as.numeric(DX_SURG_STARTED_DAYS),
+    TRUE ~NA_real_
   )) %>% 
-  mutate(prossurg = case_when(
-    RX_SUMM_SURG_PRIM_SITE %in% c(10:90) ~ "prossurg"
-  )) %>% 
+  mutate(died_prior_surgery_planned_recommended = case_when(
+    REASON_FOR_NO_SURGERY == 5 ~ "death_prior_surg",
+    TRUE ~NA_character_
+  ))
+  
+  
+class(ncdb$DX_SURG_STARTED_DAYS)  
+  
+  
+  
   mutate(radiation = case_when(
     RX_SUMM_RADIATION %in% c(1,2,3,4,5) |
       !is.na(DX_RAD_STARTED_DAYS) ~ "Radiation administered"
@@ -99,7 +115,9 @@ treatment_ncdb <- ncdb %>%
     RX_SUMM_OTHER %in% c(1:3) ~ "Other recommended treatments"
   )) %>% 
   mutate(Palliative_care = case_when( # Can do a mutate_at
-    PALLIATIVE_CARE %in% c(1:6) ~ "Received Palliative"
+    # This include palliative surg, rad, systemic and the 3 together 
+    # but not the pain management (can be added if we wnat by coding 1:6 instead of 1:5)
+    PALLIATIVE_CARE %in% c(1:5) ~ "Received_palliative" 
   ))
 
 
