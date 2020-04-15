@@ -462,15 +462,16 @@ calulate_c_index <- function(data,
     )
   }
   
-  coxph_formula_full <- function(outcome, classifiers, covariates) {
+  coxph_formula_adjusted <- function(outcome, classifiers, covariates) {
     ## construct the call to coxph()
     rlang::new_formula(
       rlang::parse_expr(paste0(
         "Surv(", time_to_outcome, ", " , outcome, ")")
       ),
-      rlang::parse_expr(paste(c(classifiers, covariates), collapse = " + "))
+      rlang::parse_expr(paste0(classifiers," + ", paste(covariates, collapse = " + ")))
     )
   }
+  
   
   coxph_model <- function(formula, data) {
     eval(rlang::expr(survival::coxph(!!formula, data = data)))
@@ -481,30 +482,27 @@ calulate_c_index <- function(data,
     return(x$concordance[[6]])
   }
   
-  # coxph_predict <- function(model, newdata){
-  #   predict(model, type = "survival", newdata = newdata)
-  # }
-  # 
-  # c_index <- function(pred, data, outcome, time_to_outcome){
-  #   surv_object <- eval(rlang::parse_expr(paste0(
-  #     "with(", data, ", Surv(", time_to_outcome, ", " , outcome, "))")
-  #   ))
-  #   
-  #   Hmisc::rcorr.cens(pred, surv_object)
-  # }
+  coxph_concordance_time <- function(coxph_model, data, times){
+    x <- update(coxph_model, data = data)
+    y <- concordance(x, ymin = 0, ymax = times)
+    return(y$concordance)
+  }
   
   c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
+    # create formulas
     mutate(formula_crude = pmap(., coxph_formula)) %>%
+    mutate(formula_adjusted = map2(outcome, classifiers, coxph_formula_adjusted,
+                                   covariates = covariates)) %>%
+    # eval models 
     mutate(model_crude = map(formula_crude, coxph_model,
                              data = training(split_data))) %>%
+    mutate(model_adjusted = map(formula_adjusted, coxph_model,
+                                data = training(split_data))) %>%
+    # calculate concordance 
     mutate(concord_crude = map(model_crude, coxph_concordance,
                                data = testing(split_data))) %>%
-    mutate(formula_full = pmap(., coxph_formula_full)) # %>%
-    # mutate(model_full = map(formula_full, coxph_model,
-    #                         data = training(split_data))) %>%
-    # mutate(concord_full = map(model_full, coxph_concordance,
-    #                           data = testing(split_data)))
-  
+    mutate(concord_adjusted = map(model_adjusted, coxph_concordance,
+                               data = testing(split_data))) 
   return(c_data)
 
  
