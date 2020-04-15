@@ -56,11 +56,11 @@ treatment_ncdb <- ncdb %>%
     # I filtered the dx of all first surgery by when patient had prostate surg first
     REASON_FOR_NO_SURGERY == 0 |
       RX_SUMM_SURG_PRIM_SITE %in% c(10:90) ~ as.numeric(DX_SURG_STARTED_DAYS),
-    TRUE ~NA_real_
+    TRUE ~ NA_real_
   )) %>% 
   mutate(died_prior_surgery_planned_recommended = case_when(
     REASON_FOR_NO_SURGERY == 5 ~ "death_prior_surg",
-    TRUE ~NA_character_
+    TRUE ~ NA_character_
   )) %>% 
   mutate(dx_of_first_rad_prostate_only = case_when(
     # filtered the dx of all first rad by when patient had prostate rad first
@@ -73,67 +73,105 @@ treatment_ncdb <- ncdb %>%
   mutate(died_prior_radiation_planned_recommended = case_when(
     REASON_FOR_NO_RADIATION == 5 |
       RAD_REGIONAL_RX_MODALITY == 99 ~ "death_prior_rad",
-    TRUE ~ NA_real_
+    TRUE ~ NA_character_
   )) %>% 
-  mutate(diag_at_autopsy = case_when(
-     death == YEAR_OF_DIAGNOSIS ~ "diagnose_at_autopsy",
-    TRUE ~ NA_real_
-  )) %>% 
-  # We cannot use rx_summ_sungraded_seq to determine what treatment came first bc include all surg
-  # mutate(time_of_rad = case_when(
-  #   RX_SUMM_SURGRAD_SEQ == 2 ~ "before surgery",
-  #   RX_SUMM_SURGRAD_SEQ == 3 ~ "after surgery",
-  #   RX_SUMM_SURGRAD_SEQ == 4 ~ "before and after",
-  #   RX_SUMM_SURGRAD_SEQ == 5 ~ "during surgery"
+  # mutate(diag_at_autopsy = case_when( # Cannot get that
   # )) %>% 
   mutate(rad_site = case_when(
     # rad site for the first course treatment # will probably not use as is
     RAD_TREAT_VOL %in% c(1:98) & 
       RAD_TREAT_VOL != 41 ~ "other_site",
-    RAD_TREAT_VOL == 41 ~ "prostate"
-  )) 
-  
-
-  mutate(systemic)
- 
-  
-  mutate(systemic_treatment = case_when(
-    !is.na(DX_SYSTEMIC_STARTED_DAYS) ~ "systemic treatment administered"
+    RAD_TREAT_VOL == 41 ~ "prostate",
+    TRUE ~ NA_character_
   )) %>% 
-  mutate(primary_treat = case_when(
-    DX_SYSTEMIC_STARTED_DAYS < DX_SURG_STARTED_DAYS & # all surgery
-      DX_SYSTEMIC_STARTED_DAYS < DX_RAD_STARTED_DAYS # all radiation
-    ~ "systemic_treatment",
-    DX_SURG_STARTED_DAYS < DX_SYSTEMIC_STARTED_DAYS &
-      DX_SURG_STARTED_DAYS < DX_RAD_STARTED_DAYS
-    ~ "surgery_prim_site",
-    DX_RAD_STARTED_DAYS < DX_SURG_STARTED_DAYS &
-      DX_RAD_STARTED_DAYS < DX_SYSTEMIC_STARTED_DAYS
-    ~ "radiation",
-    RX_SUMM_SURGRAD_SEQ == 5 ~ "radiation during surgery"
-    # RX_SUMM_SURGRAD_SEQ == 2 ~ " rad before surgery",
+  mutate(systemic_treatment = case_when( # Will probably not use as is
+    !is.na(DX_SYSTEMIC_STARTED_DAYS) ~ "systemic_treatment_administered",
+    TRUE ~ NA_character_
   )) %>% 
-  mutate(type_systemic_treatment1 = case_when(
-    RX_SUMM_CHEMO %in% c(01, 02, 03) ~ "chemo"))%>% 
-  mutate(type_systemic_treatment2 = case_when(
-    RX_SUMM_HORMONE == 01 ~ "Hormone therapy"))%>% 
-  mutate(type_systemic_treatment3 = case_when(
-    RX_SUMM_IMMUNOTHERAPY == 01 ~ "Immunotherapy"))%>% 
-  mutate(type_systemic_treatment4 = case_when(
-    RX_SUMM_TRNSPLNT_ENDO %in% c(10, 11,12, 20) ~ "Hematologic transplant"))%>% 
-  mutate(type_systemic_treatment5 = case_when(
-    RX_SUMM_OTHER %in% c(1:3) ~ "Other recommended treatments"
+  mutate(dx_of_first_chemo_only = case_when( 
+    # I filtered to have the dx of first chemo
+    RX_SUMM_CHEMO %in% c(1:3) ~ as.numeric(DX_CHEMO_STARTED_DAYS),
+    TRUE ~NA_real_
+    )) %>%
+  mutate(dx_of_first_homoneT_only = case_when( 
+    # I filtered to have the dx of first hormone therapy
+    RX_SUMM_HORMONE == 1 ~ as.numeric(DX_HORMONE_STARTED_DAYS),
+    TRUE ~NA_real_
+  )) %>%
+  mutate(dx_of_first_immunoT_only = case_when( 
+    # I filtered to have the dx of first immunotherapy
+    RX_SUMM_IMMUNOTHERAPY == 1 ~ as.numeric(DX_IMMUNO_STARTED_DAYS),
+    TRUE ~NA_real_
+  )) %>%
+  mutate(rad_vs_surg_vs_sys_as_primary_treatment = case_when(
+    # We cannot use RX_SUMM_SURGRAD_SEQ or RX_SUMM_SYSTEMIC_SUR_SEQ 
+    # to determine what treatment came first bc include all surg 
+    # not only prostate as first surgery
+    # So need to compare what 1st course happened first
+      (dx_of_first_chemo_only &
+        dx_of_first_homoneT_only &
+        dx_of_first_immunoT_only) < 
+        (dx_of_first_surg_prostate_only & 
+        dx_of_first_rad_prostate_only) ~ "systemic_as_first",
+      dx_of_first_surg_prostate_only < 
+        (dx_of_first_chemo_only &
+           dx_of_first_homoneT_only &
+           dx_of_first_immunoT_only) &
+        dx_of_first_surg_prostate_only < dx_of_first_rad_prostate_only ~ "surgery_prim_site_as_first",
+      dx_of_first_rad_prostate_only < dx_of_first_surg_prostate_only &
+        dx_of_first_rad_prostate_only < 
+        (dx_of_first_chemo_only &
+           dx_of_first_homoneT_only &
+           dx_of_first_immunoT_only) ~ "radiation_as_first",
+      ((dx_of_first_chemo_only &
+         dx_of_first_homoneT_only &
+         dx_of_first_immunoT_only) == 
+        dx_of_first_surg_prostate_only | 
+           dx_of_first_rad_prostate_only) |
+        (dx_of_first_surg_prostate_only == 
+           dx_of_first_rad_prostate_only) ~ "same_time", # I can separate them if needed
+      TRUE ~ NA_character_
   )) %>% 
-  mutate(Palliative_care = case_when( # Can do a mutate_at
-    # This include palliative surg, rad, systemic and the 3 together 
-    # but not the pain management (can be added if we wnat by coding 1:6 instead of 1:5)
-    PALLIATIVE_CARE %in% c(1:5) ~ "Received_palliative" 
+  mutate(type_systemic_received1 = case_when(
+    RX_SUMM_CHEMO %in% c(01, 02, 03) ~ "chemotherapy",
+    TRUE ~ NA_character_
+    )) %>%
+  mutate(type_systemic_received2 = case_when(
+    RX_SUMM_HORMONE == 01 ~ "Hormone_therapy",
+    TRUE ~ NA_character_
+    )) %>%
+  mutate(type_systemic_received3 = case_when(
+    RX_SUMM_IMMUNOTHERAPY == 01 ~ "Immunotherapy",
+    TRUE ~ NA_character_
+    )) %>%
+  mutate(type_systemic_received4 = case_when(
+    RX_SUMM_TRNSPLNT_ENDO %in% c(10, 11, 12, 20) ~ "Hematologic_transplant",
+    TRUE ~ NA_character_
+    )) %>%
+  mutate(type_systemic_received5 = case_when(
+    RX_SUMM_OTHER %in% c(1:3) ~ "Other_recommended_treatments",
+    TRUE ~ NA_character_
+    )) %>% 
+  mutate(died_prior_systemic__planned_recommended = case_when(
+    RX_SUMM_CHEMO == 85 &
+      RX_SUMM_HORMONE == 85 &
+      RX_SUMM_IMMUNOTHERAPY == 85 &
+      RX_SUMM_TRNSPLNT_ENDO == 85 ~ "death_prior_systemic", # Can separate them if needed
+    TRUE ~ NA_character_
+    )) %>% 
+  mutate(palliative_care = case_when( # Can do a mutate_at
+    # This include palliative surg, rad, systemic or the 3 together 
+    # but not pain management (can be added if we wnat by coding 1:6 instead of 1:5)
+    PALLIATIVE_CARE %in% c(1:5) ~ "Received_palliative",
+    TRUE ~ NA_character_
+  )) %>% 
+  mutate(palliative_care_only = case_when(
+    palliative_care == "Received_palliative" &
+      is.na(dx_of_first_surg_prostate_only) &
+      is.na(dx_of_first_rad_prostate_only) &
+      is.na(dx_of_first_chemo_only) &
+      is.na(dx_of_first_homoneT_only) &
+      is.na(dx_of_first_immunoT_only) &
+      is.na(DX_RX_STARTED_DAYS) ~ "Received_palliative_only",
+    TRUE ~ NA_character_
   ))
-
-
-
-# Check active
-a <- treatment_ncdb[treatment_ncdb$treatment_given1 == "treatment given",]
-table(treatment_ncdb$active_surv == "active")
-tail(table(ncdb$DX_RX_STARTED_DAYS))
-which(ncdb$DX_RX_STARTED_DAYS == "444")
