@@ -114,6 +114,56 @@ seer_recoding <- function(seer_raw){
       AGE_DX >= 50 & AGE_DX < 131 ~ 1,
       TRUE                        ~ NA_real_
     )) %>%
+    # treatment information  ----------------------------------------
+    mutate(surgery = case_when(
+      RX_SUMM_SURG_PRIM_SITE == 0 ~ "No Surgery",
+      RX_SUMM_SURG_PRIM_SITE %in% c(30, 50, 70, 80) ~ "Prostatectomy",
+      TRUE ~ "Other/Unknown"
+    )) %>%
+    mutate(radiation = case_when(
+      RX_SUMM_RADIATION == 0 ~ "No Radiation",
+      RX_SUMM_RADIATION == 9 ~ "Unknown",
+      TRUE ~ "Radiation"
+    )) %>%
+    mutate(radiation_cat = case_when(
+      RAD_BOOST_RX_MODALITY %in% 50:54 & RAD_REGIONAL_RX_MODALITY %in% c(51:54, 0, 99) ~ "Brachy",
+      RAD_BOOST_RX_MODALITY %in% c(0, 99) & RAD_REGIONAL_RX_MODALITY %in% 50:54 ~ "Brachy",
+      RAD_BOOST_RX_MODALITY %in% 50:54 & RAD_REGIONAL_RX_MODALITY %in% c(20, 22:27, 31:32) ~ "EBRT + brachy",
+      RAD_BOOST_RX_MODALITY %in% c(20, 22:27, 31:32) & RAD_REGIONAL_RX_MODALITY %in% 50:54 ~ "EBRT + brachy",
+      RAD_BOOST_RX_MODALITY %in% c(20, 22:27, 31:32) & RAD_REGIONAL_RX_MODALITY %in% c(20, 22:27, 31:32, 0, 99) ~ "EBRT",
+      RAD_BOOST_RX_MODALITY %in% c(0, 99) & RAD_REGIONAL_RX_MODALITY %in% c(20, 22:27, 31:32) ~ "EBRT",
+      RAD_BOOST_RX_MODALITY %in% c(28:30, 40:43, 55, 60:62, 80, 85, 98) & 
+        RAD_REGIONAL_RX_MODALITY %in% c(28:30, 40:43, 55, 60:62, 80, 85, 98) ~ "Other",
+      TRUE ~ "Unknown"
+    )) %>%
+    mutate(trt_typeI = case_when(
+      radiation_cat %in% c("Brachy", "EBRT", "EBRT + brachy", "Other") & surgery == "No Surgery" ~ "Radiation",
+      radiation_cat == "Unknown" & surgery == "No Surgery" ~ "No RX",
+      radiation_cat == "Unknown" & surgery == "Prostatectomy" ~ "Prostatectomy",
+      radiation_cat == "Unknown" & surgery == "Other/Unknown" ~ "Other Surgery",
+      radiation_cat == "Brachy" & surgery == "Other/Unknown" &
+        DX_RAD_STARTED_DAYS > 0 & DX_DEFSURG_STARTED_DAYS == 0 ~ "Radiation - secondary",
+      radiation_cat == "Brachy" & surgery == "Other/Unknown" &
+        DX_RAD_STARTED_DAYS > 0 & is.na(DX_DEFSURG_STARTED_DAYS) ~ "Radiation",
+      radiation_cat == "Brachy" & surgery == "Other/Unknown" &
+        DX_RAD_STARTED_DAYS == DX_DEFSURG_STARTED_DAYS ~ "Radiation",
+      radiation_cat == "EBRT" & surgery == "Prostatectomy" & 
+        DX_DEFSURG_STARTED_DAYS < DX_RAD_STARTED_DAYS ~ "Prostatectomy/Radiation",
+      radiation_cat == "EBRT" & surgery == "Prostatectomy" & 
+        is.na(DX_DEFSURG_STARTED_DAYS) & is.na(DX_RAD_STARTED_DAYS) ~ "Other"
+    )) %>% 
+    mutate(trt_typeII = case_when(
+      trt_typeI %in% c("Prostatectomy", "Prostatectomy/Radiation") ~ "Prostatectomy",
+      trt_typeI == "Radiation" ~ "Radiation",
+      trt_typeI == "No RX" ~ "No Rx",
+      TRUE ~ "Other/Cant Determine"
+    )) %>%
+    mutate(trt_typeIII = case_when(
+      RX_SUMM_TREATMENT_STATUS %in% c(0,9) & trt_typeII == "No RX" ~ "No RX",
+      RX_SUMM_TREATMENT_STATUS == 1 & trt_typeII == "No RX" ~ "Other/Cant determine",
+      RX_SUMM_TREATMENT_STATUS == 2 & trt_typeII == "No RX" ~ "Active Surveillance",
+      TRUE ~ trt_typeII
+    )) %>%
     # misc cleaning -------------------------------------------------
     mutate(race = case_when(
       RAC_RECA == 1 ~ "white",
@@ -477,16 +527,17 @@ calulate_c_index <- function(data,
     eval(rlang::expr(survival::coxph(!!formula, data = data)))
   }
   
-  coxph_concordance <- function(coxph_model, data){
+  coxph_concordance <- function(coxph_model, data, ...){
     x <- update(coxph_model, data = data)
-    return(x$concordance[[6]])
-  }
-  
-  coxph_concordance_time <- function(coxph_model, data, times){
-    x <- update(coxph_model, data = data)
-    y <- concordance(x, ymin = 0, ymax = times)
+    y <- concordance(x, ...)
     return(y$concordance)
   }
+  
+  # coxph_concordance_time <- function(coxph_model, data, times){
+  #   x <- update(coxph_model, data = data)
+  #   y <- concordance(x, ymin = 0, ymax = times)
+  #   return(y$concordance)
+  # }
   
   c_data <- tibble(outcome = outcome, classifiers = classifiers) %>%
     # create formulas
