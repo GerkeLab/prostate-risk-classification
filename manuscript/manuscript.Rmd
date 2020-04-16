@@ -136,7 +136,7 @@ not available for NCDB), education level (quartiles of adults who did not gradua
 school; not available for SEER) and primary treatment (). Risk classification was assessed 
 by the concordance index within each model, both overall and by year post diagnosis. 
 
-Analyses were performed overall and stratified by self-reported race.
+Analyses were performed overall and stratified by self-reported race as well as by primary treatment.
 
 As a sensitivity analysis, we performed the above-described analyses in prostate-specific 
 deaths in SEER (data not available in NCDB).
@@ -168,7 +168,13 @@ white and `r nrow(risk_ncdb[risk_ncdb$os==1,])`
 (`r round(nrow(risk_ncdb[risk_ncdb$os==1,])/nrow(risk_ncdb)*100, 2)` %) died. 
 In NCDB, the overall crude c-index values were lowest for D'Amico, NICE and EAU at 
 `r round(min(unlist(ncdb_c_index$concord_crude)), 3)`, while the highest at 
-`r round(max(unlist(ncdb_c_index$concord_crude)), 3)` was observed in GCP. 
+`r round(max(unlist(ncdb_c_index$concord_crude)), 3)` was observed in GCP. In 
+those who recieved a prostatectomy, the lowest crude concordance index was for 
+AUA and the lowest adjusted concordance index was for the continuous CAPRA 
+score, while the highest crude concordance was in NICE and EAU and the highest
+adjusted concordance was in GUROC. 
+
+
 
 **Discussion**
 
