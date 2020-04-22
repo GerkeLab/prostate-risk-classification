@@ -1,19 +1,45 @@
 ---
-output: html_document
+title: "Comparing prostate risk stratification tools"
+date: '`r strftime(Sys.time(), "%A, %b %d, %Y")`'
+output:
+  rmarkdown::html_vignette:
+    df_print: kable
+    standalone: true
+  pdf_document: 
+    latex_engine: xelatex
+editor_options: 
+  chunk_output_type: console
 bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
-                      message = FALSE)
-
-library(drake)
-library(tidyverse)
+                      message = FALSE,
+                      cache = FALSE,
+                      fig.width = 10, fig.height = 7)
 
 ```
 
-**Comparing prostate risk stratification tools**
+```{css global-css, echo=FALSE}
+img {
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+}
+```
+
+```{r library, include=FALSE}
+library(drake)
+library(tidyverse)
+```
+
+```{r}
+loadd(risk_ncdb)
+loadd(risk_seer)
+loadd(seer_c_index)
+loadd(ncdb_c_index)
+```
 
 Jordan H. Creed
 Christelle 
@@ -48,31 +74,72 @@ Email: travis.gerke@moffitt.org
 
 **Introduction**
 
-Pretreatment risk stratification tools are used to predict prostate cancer outcomes in men. The D'Amico risk startification system was originally proposed in ...
+Pretreatment risk stratification tools are used to predict prostate cancer 
+outcomes in men. However these tools were developed in cohorts with predominantly
+European ancestry. Meanwhile African American men (AAM) are disproportionally affected
+by prostate cancer, with AAM twice as likely than European American men (EAM) to
+die from the disease [@seer]. 
 
-We used Surveillance, Epidemiology, and End Results (SEER) and National Cancer Database (NCDB) prostate cancer databases to compare the performance of the following pretreatment risk stratification tools: D'Amico, NICE, EAU and CAPRA. 
+The D'Amico risk stratification was developed in 1998 and is based on known 
+prognostic factors and a literature review and classifies individuals into low,
+intermediate and high risk of PSA failure [@damico1998]. 
+The National Institute of Health and Care Excellence (NICE) created their own 
+risk stratification for providing treatment recommendations to men with 
+localised prostate cancer [@graham2014]. The European Association of Urology 
+(EAU) guidelines aim to classify patients according to risk for biochemical 
+recurrence following treatment [@mottet2017]. The GU Radiation Oncologists of
+Canada (GUROC) also agree upon a low, intermediate and high risk stratification 
+for localised prostate cancer [@lukka2001], while the American Urological 
+Association (AUA) ...
+The National Comprehensive Care Network (NCCN) recommends managing treatment
+options and clinical decision making based off their risk stratification, which 
+includes additional very high and very low risk classifications as well as 
+further stratifying intermediate into favorable and unfavorable [@mohler2016].
+The Cambridge Prognostic Groups (CPG) propose a five-level risk startification system 
+for predicting prostate cancer specific mortality in non-metastatic prostate 
+cancer cases [@gnanapragasam2016]. The Cancer of the Prostate Risk Assessment 
+(CAPRA) score is a numeric risk score (ranging from one to ten) that assesses
+biochemical recurrence specifically after radical prostatectomy [@cooperberg2005].
+These risk stratification systems are all informed in some way by an individuals
+PSA, Gleason, and stage. 
+
+We used Surveillance, Epidemiology, and End Results (SEER) and National Cancer
+Database (NCDB) prostate cancer databases to compare the performance of the 
+following pretreatment risk stratification tools: D'Amico, NICE, EAU, GUROC, AUA,
+NCCN, CPG and CAPRA, both overall and within European and African American men. 
 
 **Paticipants and Methods**
 
 *SEER*
 
-```{r seer_import}
-
-loadd(seer_raw)
-
-```
-
-SEER is a population-based database developed by the National Cancer Institute, US Center for Disease Control and Prevention and regional and state cancer registeries and includes cancer cases from 18 states [@doll2018]. 
+SEER is a population-based database developed by the National Cancer Institute,
+US Center for Disease Control and Prevention and regional and state cancer 
+registeries and includes cancer cases from 18 states [@doll2018]. 
 
 *NCDB*
 
-NCDB is the result of the joint efforts of the American College of Surgeons and the American Cancer Society and covers almost 70% of incident cancer cases [@boffa2017]. 
+NCDB is the result of the joint efforts of the American College of Surgeons and
+the American Cancer Society and covers almost 70% of incident cancer cases
+[@boffa2017]. 
 
 **Statistical Analysis**
 
-Missing values used to determine the risk scores were imputed using multiple imputation, with XX imputations and XX iterations per imputation. 
+Risk classification was calculated for each risk stratification tool. For 
+participants with T stage greater or lesser than those used in the original 
+cutpoints, the nearest original point was used. Risk classifications were
+determined using the values available. Cox proportional hazard models
+(HR) and 95% confidence intervals for overall survival were conducted for each
+risk tool. In addition to crude model, models were adjusted for age (continuous),
+year of diagnosis (continuous), Charlson Comorbidity Index (continuous; not available for 
+SEER), marital status (married/domestic partners vs single/separated/divorced/widowed;
+not available for NCDB), education level (quartiles of adults who did not graduate high]
+school; not available for SEER) and primary treatment (). Risk classification was assessed 
+by the concordance index within each model, both overall and by year post diagnosis. 
 
-Risk classification was calculated for each risk stratification tool. For participants with T stage greater or lesser than those used in the original cutpoints, the nearest original point was used. Cox proportional hazard models (HR) and 95% confidence intervals for overall survival were conducted for each risk tool. In addition to crude model, models were adjusted for age, year of diagnosis, Charlson Comorbidity Index, marital status, education level and primary treatment.  
+Analyses were performed overall and stratified by self-reported race as well as by primary treatment.
+
+As a sensitivity analysis, we performed the above-described analyses in prostate-specific 
+deaths in SEER (data not available in NCDB).
 
 All analyses were performed using R (version 3.5.0). 
 
@@ -80,11 +147,39 @@ All analyses were performed using R (version 3.5.0).
 
 *SEER*
 
-A total of `r length(unique(seer_raw$PUBCSNUM))` men are included in the prostate cancer data for SEER. 
+A total of `r length(unique(risk_seer$PUBCSNUM))` men are included in the 
+prostate cancer data for SEER. The men are predominantly white (n =
+`r nrow(risk_seer[risk_seer$RAC_RECA==1,])`, 
+`r round(nrow(risk_seer[risk_seer$RAC_RECA==1,])/nrow(risk_seer)*100, 2)` %),
+and during followup, `r nrow(risk_seer[risk_seer$os==1,])` 
+(`r round(nrow(risk_seer[risk_seer$os==1,])/nrow(risk_seer)*100, 2)` %
+) men died. Across all risk strifications, the overall crudec-index ranges from 
+`r round(min(unlist(seer_c_index$concord_crude)), 3)` to 
+`r round(max(unlist(seer_c_index$concord_crude)), 3)`. 
+The lowest c-index was obsered for D'Amico, NICE and EAU at 0.604, while the 
+highest was GCP at 0.693. 
 
 *NCDB*
 
+In NCDB, there were `r length(unique(risk_ncdb$PUF_CASE_ID))` particiapnts with 
+prostate cancer, of which `r nrow(risk_ncdb[risk_ncdb$RACE==1,])` 
+(`r round(nrow(risk_ncdb[risk_ncdb$os==1,])/nrow(risk_ncdb)*100, 2)` %) were 
+white and `r nrow(risk_ncdb[risk_ncdb$os==1,])` 
+(`r round(nrow(risk_ncdb[risk_ncdb$os==1,])/nrow(risk_ncdb)*100, 2)` %) died. 
+In NCDB, the overall crude c-index values were lowest for D'Amico, NICE and EAU at 
+`r round(min(unlist(ncdb_c_index$concord_crude)), 3)`, while the highest at 
+`r round(max(unlist(ncdb_c_index$concord_crude)), 3)` was observed in GCP. In 
+those who recieved a prostatectomy, the lowest crude concordance index was for 
+AUA and the lowest adjusted concordance index was for the continuous CAPRA 
+score, while the highest crude concordance was in NICE and EAU and the highest
+adjusted concordance was in GUROC. 
+
+
+
 **Discussion**
+
+* PCa-specific mortality only avilable for SEER (not available for NCDB) - treat as sensitivity analysis 
+* in TCGA - risk tools correlated with European ancestry estimates?  
 
 **Conclusion**
 
@@ -96,7 +191,8 @@ The authors would like to thank the participants of SEER and NCDB.
 
 **Author Contributions**
 
-TAG designed and directed research; JHC and TAG acquired the data; JHC and TAG analyzed and interpreted the data; JHC and TAG wrote the paper. 
+TAG designed and directed research; JHC and TAG acquired the data; JHC and TAG
+analyzed and interpreted the data; JHC and TAG wrote the paper. 
 
 **Additional Information**
 
@@ -106,7 +202,90 @@ TAG designed and directed research; JHC and TAG acquired the data; JHC and TAG a
 
 **Informed Consent:** Informed consent was obtained...
 
-**Data Availability:** The datasets analysed during the current study are available from SEER and NCDB with an approved application. 
+**Data Availability:** The datasets analysed during the current study are 
+available from SEER and NCDB with an approved application. 
+
+\newpage
+
+**Tables**
+
+```{r table_ones}
+library(tableone)
+seer_vars <- c("AGE_DX", "YEAR_DX", "psa", "tstage", "gleason", 
+               "damico", "nice", "eau", "GUROC", "AUA", "AUAi", 
+               "NCCN", "CPG", "capra_score",
+               "SRV_TIME_MON", "os")
+table_one_seer <- CreateTableOne(vars = seer_vars, data = risk_seer)
+kableone(table_one_seer)
+
+
+ncdb_vars <- c("AGE", "YEAR_OF_DIAGNOSIS", "psa", "tstage", "gleason", 
+               "damico", "nice", "eau", "GUROC", "AUA", "AUAi", 
+               "NCCN", "CPG", "capra_score",
+               "DX_LASTCONTACT_DEATH_MONTHS", "os")
+table_one_ncdb <- CreateTableOne(vars = ncdb_vars, data = risk_ncdb)
+kableone(table_one_ncdb)
+
+```
+
+\newpage
+
+**Figures**
+
+```{r bar_proportions}
+library(viridis)
+
+risk_seer %>% 
+  select(PUBCSNUM, damico, nice, eau, GUROC, AUA, AUAi, NCCN, CPG) %>%
+  gather("classifier", "value", -PUBCSNUM) %>%
+  drop_na(value) %>%
+  group_by(classifier) %>%
+  mutate(total_number = n_distinct(PUBCSNUM)) %>%
+  group_by(classifier, value) %>%  
+  mutate(number = n_distinct(PUBCSNUM),
+         perc = (n_distinct(PUBCSNUM)/total_number)*100) %>%
+  distinct(classifier, value, .keep_all = TRUE) %>%
+  ungroup() %>%
+  mutate(value = factor(value, levels = c("Very High", "High", "Intermediate Unfavorable",
+                                          "Intermediate", "Intermediate Favorable",
+                                          "Low"))) %>%
+  ggplot(aes(x = classifier, y = perc, fill = value)) + 
+  geom_col() + 
+  scale_fill_viridis_d(option = "C", name = "") + 
+  labs(x = "Risk Classifier", y = "Percent (%)", 
+       title = "SEER") + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        legend.position="bottom")
+
+risk_ncdb %>% 
+  select(PUF_CASE_ID, damico, nice, eau, GUROC, AUA, AUAi, NCCN, CPG) %>%
+  gather("classifier", "value", -PUF_CASE_ID) %>%
+  drop_na(value) %>%
+  group_by(classifier) %>%
+  mutate(total_number = n_distinct(PUF_CASE_ID)) %>%
+  group_by(classifier, value) %>%  
+  mutate(number = n_distinct(PUF_CASE_ID),
+         perc = (n_distinct(PUF_CASE_ID)/total_number)*100) %>%
+  distinct(classifier, value, .keep_all = TRUE) %>%
+  ungroup() %>%
+  mutate(value = factor(value, levels = c("Very High", "High", "Intermediate Unfavorable",
+                                          "Intermediate", "Intermediate Favorable",
+                                          "Low"))) %>%
+  ggplot(aes(x = classifier, y = perc, fill = value)) + 
+  geom_col() + 
+  scale_fill_viridis_d(option = "C", name = "") + 
+  labs(x = "Risk Classifier", y = "Percent (%)", 
+       title = "NCDB") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        legend.position="bottom")
+
+```
 
 \newpage
 
