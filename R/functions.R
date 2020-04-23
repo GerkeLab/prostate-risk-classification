@@ -406,11 +406,11 @@ risk_scores <- function(data,
         tstage %in% c("T2b", "T2c")                                         ~ "Intermediate",
       psa < 10 &
         isup == 1 &
-        tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")              ~ "Low",
-      psa < 10 &
-        isup == 1 &
         tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
         percent_pos_cores < 34                                              ~ "Very Low",
+      psa < 10 &
+        isup == 1 &
+        tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a")              ~ "Low",
       TRUE                                                                  ~ NA_character_
     )) %>% 
     # still need to find reference for this -------------
@@ -423,10 +423,10 @@ risk_scores <- function(data,
         (isup == 2 & ((psa >= 10 & psa < 20) | tstage %in% c("T2b", "T2c")))  |
           (isup == 3 & psa < 20)                                              ~ "Intermediate Unfavorable",
         (isup == 1 & psa >= 10 & psa < 20) | (isup == 2 & psa < 10)           ~ "Intermediate Favorable",
-        psa < 10 & isup == 1 & tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") ~ "Low",
         psa < 10 & isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") &
           percent_pos_cores < 34                                              ~ "Very Low",
+        psa < 10 & isup == 1 & tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") ~ "Low",
         TRUE ~ NA_character_
     )) %>%
     # Followed NCCN guidelines (not zelic) : https://www.nccn.org/patients/guidelines/content/PDF/prostate-patient.pdf#page=52
@@ -444,10 +444,10 @@ risk_scores <- function(data,
           percent_pos_cores < 50 &
           isup %in% 1:2                                    ~ "Intermediate Favorable",
         psa < 10 & isup == 1 &
-          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") ~ "Low",
-        psa < 10 & isup == 1 &
           tstage %in% c("T1", "T1a", "T1b" , "T1c") &  
           {{pos_cores_var}} %in% 1:2 ~ "Very Low",
+        psa < 10 & isup == 1 &
+          tstage %in% c("T1", "T1a", "T1b" , "T1c", "T2", "T2a") ~ "Low",
         TRUE  ~ NA_character_
     )) %>% 
     # https://www.ncbi.nlm.nih.gov/pubmed/27483464/ 
